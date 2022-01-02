@@ -220,19 +220,18 @@ function getSessionsStyleOption(type) {
     return (type || "recent") + "-sessions-style";
 }
 
-function getSessionsStyle(type) {
+export function getSessionsStyle(type) {
     var v = handler.get_local_option(getSessionsStyleOption(type));
     if (!v) v = type == "ab" ? "list" : "tile";
     return v;
 }
 
-var searchPatterns = {};
+class SearchBar extends Element {
+    parent;
+    value = "";
 
-class SearchBar: Reactor.Component {
-    this var type = "";
-
-    function this(params) {
-        this.type = (params || {}).type || "";
+    constructor(props) {
+        this.parent = props.parent;
     }
 
     function render() {
@@ -246,33 +245,35 @@ class SearchBar: Reactor.Component {
         </div>;
     }
 
-    event click $(span.clear-input) {
+    ["on click at span.clear-input"](_) {
+        this.search_id.value = '';
         this.onChange('');
     }
 
     event change $(input) (_, el) {
         this.onChange(el.value.trim().toLowerCase());
     }
-    
-    function onChange(v) {
-        searchPatterns[this.type] = v;
-        app.multipleSessions.update();
+
+    onChange(v) {
+        this.value = v;
+        this.update(); // TODO update()
+        this.parent.filter(v);
     }
 }
 
-class SessionStyle: Reactor.Component {
-    this var type = ""; 
+class SessionStyle extends Element {
+    type = "";
 
-    function this(params) {
-        this.type = (params || {}).type || "";
+    constructor(props) {
+        this.type = (props || {}).type;
     }
 
-    function render() {
-        var sessionsStyle = getSessionsStyle(this.type);
-        return <div .sessions-tab style="margin-left: 0.5em;">
-                <span class={sessionsStyle == "tile" ? "active" : "inactive"}>{svg_tile}</span>
-                <span class={sessionsStyle != "tile" ? "active" : "inactive"}>{svg_list}</span>
-            </div>;
+    render() {
+        let sessionsStyle = getSessionsStyle(this.type);
+        return (<div class="sessions-style" >
+            <span class={sessionsStyle == "tile" ? "active" : "inactive"}>{svg_tile}</span>
+            <span class={sessionsStyle != "tile" ? "active" : "inactive"}>{svg_list}</span>
+        </div>);
     }
 
     event click $(span.inactive) {
@@ -287,19 +288,25 @@ class SessionStyle: Reactor.Component {
     }
 }
 
-class SessionList: Reactor.Component {
-    this var sessions = [];
-    this var type = "";
-    this var style;
-    
-    function this(params) {
-        this.sessions = params.sessions;
-        this.type = params.type || "";
-        this.style = getSessionsStyle(this.type);
+class SessionList extends Element {
+    sessions = [];
+    type = "";
+    style;
+    filterPattern = "";
+
+    constructor(props) {
+        this.sessions = props.sessions;
+        this.type = props.type;
+        this.style = getSessionsStyle(props.type);
     }
 
-    function getSessions() {
-        var p = searchPatterns[this.type];
+    filter(v) {
+        this.filterPattern = v;
+        this.update(); // TODO update
+    }
+
+    getSessions() {
+        let p = this.filterPattern;
         if (!p) return this.sessions;
         var tmp = [];
         this.sessions.map(function(s) {
@@ -341,65 +348,53 @@ class SessionList: Reactor.Component {
                 </menu>
             </popup>
             {sessions}
-        </div>;
+        </div >;
     }
 
-    function getSession(s) {
-        var id = s[0] || s.id || "";
-        var username = s[1] || s.username || "";
-        var hostname = s[2] || s.hostname || "";
-        var platform = s[3] || s.platform || "";
-        var alias = s[4] || s.alias || "";
+    getSession(s) {
+        let id = s[0] || s.id || "";
+        let username = s[1] || s.username || "";
+        let hostname = s[2] || s.hostname || "";
+        let platform = s[3] || s.platform || "";
+        let alias = s[4] || s.alias || "";
         if (this.style == "list") {
-            return <div .remote-session-link .remote-session-list id={id} platform={platform} title={alias ? "ID: " + id : ""}>
-                <div .platform style={"background:"+string2RGB(id+platform, 0.5)}>
-                    {platform && platformSvg(platform, "white")}
+            return (<div class="remote-session-link remote-session-list" id={id} platform={platform} title={alias ? "ID: " + id : ""} >
+                <div class="platform" style={"background:" + string2RGB(id + platform, 0.5)}>
+                    {platformSvg(platform, "white")}
                 </div>
-                <div .name>
+                <div class="name">
                     <div>
-                        <div #alias .ellipsis>{alias ? alias : formatId(id)}</div>
-                        <div .username .ellipsis>{username}@{hostname}</div>
+                        <div id="alias" class="ellipsis">{alias ? alias : formatId(id)}</div>
+                        <div class="username ellipsis">{username}@{hostname}</div>
                     </div>
                 </div>
                 <div>
                     {svg_menu}
                 </div>
-            </div>;
+            </div >);
         }
-        return <div .remote-session-link .remote-session id={id} platform={platform} title={alias ? "ID: " + id : ""} style={"background:"+string2RGB(id+platform, 0.5)}>
-            <div .platform>
-                {platform && platformSvg(platform, "white")}
-                <div .username .ellipsis>{username}@{hostname}</div>
+        return (<div class="remote-session-link remote-session" id={id} platform={platform} title={alias ? "ID: " + id : ""} style={"background:" + string2RGB(id + platform, 0.5)} >
+            <div class="platform">
+                {platformSvg(platform, "white")}
+                <div class="username ellipsis">{username}@{hostname}</div>
             </div>
-            <div .text>
-                <div #alias .ellipsis>{alias ? alias : formatId(id)}</div>
+            <div class="text">
+                <div id="alias" class="ellipsis">{alias ? alias : formatId(id)}</div>
                 {svg_menu}
-            </div>
-        </div>;
+            </div >
+        </div >);
     }
 
-    event dblclick $(div.remote-session-link) (evt, me) {
+    // TEST dbclick
+    ["on dbclick at div.remote-session-link"](evt, me) {
         createNewConnect(me.id, "connect");
     }
-    
-    event click $(#menu) (_, me) {
-        var id = me.parent.parent.id;
-        var platform = me.parent.parent.attributes["platform"];
-        this.$(#rdp).style.set{
-            display: (platform == "Windows" && is_win) ? "block" : "none",
-        };
-        this.$(#forget-password).style.set{
-            display: handler.peer_has_password(id) ? "block" : "none",
-        };
-        if (!this.type || this.type == "fav") {
-            var in_fav = handler.get_fav().indexOf(id) >= 0;
-            this.$(#add-fav).style.set{
-                display: in_fav ? "none" : "block",
-            };
-            this.$(#remove-fav).style.set{
-                display: in_fav ? "block" : "none",
-            };
-        }
+
+    // TODO #menu
+    ["on click at #menu"](_, me) {
+        let id = me.parent.parent.id;
+        let platform = me.parent.parent.attributes["platform"]; // TODO attributes["platform"]
+        this.$("#rdp").style.setProperty("display", (platform == "Windows" && is_win) ? "block" : "none");
         // https://sciter.com/forums/topic/replacecustomize-context-menu/
         var menu = this.$(menu#remote-context);
         current_menu_peer_id = id;
@@ -452,7 +447,7 @@ class SessionList: Reactor.Component {
         } else if (action == "forget-password") {
             handler.forget_password(id);
         } else if (action == "shortcut") {
-            handler.create_shortcut(id);
+            handler.xcall("create_shortcut", id);
         } else if (action == "rdp") {
             if (is_edit_rdp_port) {
                 is_edit_rdp_port = false;
@@ -491,7 +486,7 @@ class SessionList: Reactor.Component {
                 </div> \
                 ", "", function(res=null) {
                     if (!res) return;
-                    var name = (res.name || "").trim();
+                    let name = (res.name || "").trim();
                     if (name != old_name) {
                         if (abPeer) {
                             abPeer.alias = name;

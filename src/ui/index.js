@@ -27,7 +27,7 @@ if (incoming_only) {
   view.windowMinSize = (scaleIt(560), scaleIt(300));
 }
 
-var app;
+export var app;
 var tmp = handler.get_connect_status();
 var connect_status = tmp[0];
 var service_stopped = handler.get_option("stop-service") == "Y";
@@ -97,7 +97,28 @@ class ConnectStatus: Reactor.Component {
     }
 }
 
-function createNewConnect(id, type) {
+class RecentSessions: Reactor.Component {
+    function render() {
+        var sessions = handler.get_recent_sessions();
+        if (sessions.length == 0) return <span />;
+        return <div style="width: *">
+            <div .sessions-bar>
+                <div style="width:*">
+                    {translate("Recent Sessions")}
+                </div>
+                <SearchBar parent={this} />
+                {!app.hidden && <SessionStyle />}
+            </div>
+            {!app.hidden && <SessionList @{this.sessionList} style={sessionsStyle} sessions={sessions} />}
+        </div>;
+    }
+
+    function filter(v) {
+        this.sessionList.filter(v);
+    }
+}
+
+export function createNewConnect(id, type) {
     id = id.replace(/\s/g, "");
     app.remote_id.value = formatId(id);
     if (!id) return;
@@ -1292,7 +1313,7 @@ class ID: Reactor.Component {
 }
 
 var reg = /^\d+$/;
-function formatId(id) {
+export function formatId(id) {
     id = id.replace(/\s/g, "");
     if (reg.test(id) && id.length > 3) {
         var n = id.length;
