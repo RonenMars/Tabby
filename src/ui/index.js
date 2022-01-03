@@ -28,7 +28,7 @@ if (incoming_only) {
 }
 
 export var app;
-var tmp = handler.get_connect_status();
+var tmp = handler.xcall("get_connect_status");
 var connect_status = tmp[0];
 var service_stopped = handler.get_option("stop-service") == "Y";
 var disable_udp = handler.get_option("disable-udp") == "Y";
@@ -54,7 +54,7 @@ var svg_refresh_password = <svg #refresh-password xmlns="http://www.w3.org/2000/
 
 var my_id = handler.get_id();
 function get_id() {
-  my_id = handler.get_id();
+  my_id = handler.xcall("get_id");
   return my_id;
 }
 
@@ -76,7 +76,7 @@ class ConnectStatus: Reactor.Component {
             </div>;
     }
 
-    function getConnectStatusStr() {
+    getConnectStatusStr() {
         if (service_stopped) {
             return translate("Service is not running");
         } else if (connect_status == -1) {
@@ -88,8 +88,8 @@ class ConnectStatus: Reactor.Component {
         return <span>{translate("Ready")}, <span .link #setup-server>{translate("setup_server_tip")}</span></span>;
     }
 
-    event click $(#start-service) () {
-        handler.set_option("stop-service", "");
+    ["on click at #start-service"]() {
+        handler.xcall("set_option","stop-service", "");
     }
 
     event click $(#setup-server) () {
@@ -97,23 +97,25 @@ class ConnectStatus: Reactor.Component {
     }
 }
 
-class RecentSessions: Reactor.Component {
-    function render() {
-        var sessions = handler.get_recent_sessions();
+// TODO** SearchBar SessionStyle sessionsStyle SessionList
+// TODO @{this.sessionList} {!app.hidden && <SessionList @{this.sessionList} style={sessionsStyle} sessions={sessions} />}
+class RecentSessions extends Element {
+    render() {
+        let sessions = handler.xcall("get_recent_sessions");
         if (sessions.length == 0) return <span />;
-        return <div style="width: *">
-            <div .sessions-bar>
+        return (<div style="width: *">
+            <div class="sessions-bar">
                 <div style="width:*">
                     {translate("Recent Sessions")}
                 </div>
                 <SearchBar parent={this} />
                 {!app.hidden && <SessionStyle />}
             </div>
-            {!app.hidden && <SessionList @{this.sessionList} style={sessionsStyle} sessions={sessions} />}
-        </div>;
+            {!app.hidden && <SessionList />} 
+        </div>);
     }
-
-    function filter(v) {
+    // TODO TEST
+    filter(v) {
         this.sessionList.filter(v);
     }
 }
@@ -171,14 +173,15 @@ class DirectServer: Reactor.Component {
 
 var myIdMenu;
 var audioInputMenu;
-class AudioInputs: Reactor.Component {
-    function this() {
+class AudioInputs extends Element {
+    this() {
         audioInputMenu = this;
     }
 
-    function render() {
+    render() {
+        // TODO this.show
         if (!this.show) return <li />;
-        var inputs = handler.get_sound_inputs();
+        let inputs = handler.xcall("get_sound_inputs");
         if (is_win) inputs = ["System Sound"].concat(inputs);
         if (!inputs.length) return <li style="display:hidden" />;
         var me = this;
@@ -191,16 +194,16 @@ class AudioInputs: Reactor.Component {
                 return <li id={name}><span>{svg_checkmark}</span>{translate(name)}</li>;
                 })}
             </menu>
-        </li>;
+        </li>);
     }
 
-    function get_default() {
+    get_default() {
         if (is_win) return "System Sound";
         return "";
     }
 
-    function get_value() {
-        return handler.get_option("audio-input") || this.get_default();
+    get_value() {
+        return handler.xcall("get_option","audio-input") || this.get_default();
     }
 
     function toggleMenuState() {
@@ -518,16 +521,16 @@ function updateTheme() {
     }
 }
 
-class MyIdMenu: Reactor.Component {
-    function this() {
+class MyIdMenu extends Element {
+    this() {
         myIdMenu = this;
     }
 
-    function render() {
-        return <div #myid>
+    render() {
+        return (<div id="myid">
             {this.renderPop()}
             ID{svg_menu}
-        </div>;
+        </div>);
     }
 
     function renderPop() {
@@ -570,7 +573,7 @@ class MyIdMenu: Reactor.Component {
                 {disable_installation ? "" : <li #allow-auto-update><span>{svg_checkmark}</span>{translate('Auto update')}</li>} 
                 <li #about>{translate('About')} {" "}{handler.get_app_name()}</li>
             </menu>
-        </popup>;
+        </popup>);
     }
 
     event click $(svg#menu) (_, me) {
@@ -769,7 +772,7 @@ class App: Reactor.Component
                                 <button .button #connect>{translate('Connect')}</button>
                             </div>
                         </div>
-                        <MultipleSessions @{this.multipleSessions} />
+                        <RecentSessions  />
                     </div>
                     {!outgoing_only ? <ConnectStatus @{this.connect_status} /> : ""}
                 </div>}
@@ -777,30 +780,44 @@ class App: Reactor.Component
             </div>; 
     }
 
-    event click $(button#connect) {
+    ["on click at button#connect"](){
         this.newRemote("connect");
     }
 
-    event click $(button#file-transfer) {
+    ["on click at button#file-transfer"]() {
         this.newRemote("file-transfer");
     }
 
-    function newRemote(type) {
+    ["on keydown"](evt) {
+        if (!evt.shortcutKey) {
+            // TODO TEST Windows/Mac
+            if (evt.code == "KeyRETURN") {
+                var el = $("button#connect");
+                view.focus = el;
+                el.click();
+                // simulate button click effect, windows does not have this issue
+                el.classList.toggle("active", true);
+                el.timer(300, ()=> el.classList.toggle("active", false));
+            }
+        }
+    }
+
+    newRemote(type) {
         createNewConnect(this.remote_id.value, type);
     }
 }
 
-class InstallMe: Reactor.Component {
-    function render() {
-        return <div .install-me>
+class InstallMe extends Element {
+    render() {
+        return (<div class="install-me">
             <span />
             <div>{translate('install_tip')}</div>
             <div><button #install-me .button>{translate('Install')}</button></div>
         </div>;
     }
 
-    event click $(#install-me) {
-        handler.goto_install();
+    ["on click at #install-me"]() {
+        handler.xcall("goto_install");
     }
 }
 
@@ -836,15 +853,15 @@ class UpgradeMe: Reactor.Component {
         </div>;
     }
 
-    event click $(#install-me) {
-        handler.update_me("");
+    ["on click at #install-me"]() {
+        handler.xcall("update_me");
     }
 }
 
-class UpdateMe: Reactor.Component {
-    function render() {
-        var update_or_download = "download"; // !is_win ? "download" : "update";
-        return <div .install-me>
+class UpdateMe extends Element {
+    render() {
+        let update_or_download = "download"; // !is_win ? "download" : "update";
+        return (<div class="install-me">
             <div>{translate('Status')}</div>
             <div>There is a newer version of {handler.get_app_name()} ({handler.get_new_version()}) available.</div>
             {is_custom_client
@@ -857,38 +874,39 @@ class UpdateMe: Reactor.Component {
     event click $(#install-me) {
         handler.open_url("https://rustdesk.com/download");
         return;
+        // TODO return?
         if (!is_win) {
-            handler.open_url("https://rustdesk.com");
+            handler.xcall("open_url","https://rustdesk.com");
             return;
         }
-        var url = software_update_url + '.' + handler.get_software_ext();
-        var path = handler.get_software_store_path();
-        var onsuccess = function(md5) {
-            $(#download-percent).content(translate("Installing ..."));
-            handler.update_me(path);
+        let url = software_update_url + '.' + handler.xcall("get_software_ext");
+        let path = handler.xcall("get_software_store_path");
+        let onsuccess = function(md5) {
+            this.$("#download-percent").content(translate("Installing ..."));
+            handler.xcall("update_me",path);
         };
-        var onerror = function(err) {
+        let onerror = function(err) {
             msgbox("custom-error", "Download Error", "Failed to download"); 
         };
-        var onprogress = function(loaded, total) {
+        let onprogress = function(loaded, total) {
             if (!total) total = 5 * 1024 * 1024;
-            var el = $(#download-percent);
-            el.style.set{display: "block"};
+            let el = this.$("#download-percent");
+            el.style.setProperty("display","block");
             el.content("Downloading %" + (loaded * 100 / total));
         };
         stdout.println("Downloading " + url + " to " + path);
         download(
             url,
-            self.url(path),
+            document.url(path),
             onsuccess, onerror, onprogress);
     }
 }
 
-class SystemError: Reactor.Component {
-    function render() {
-        return <div .install-me>
+class SystemError extends Element {
+    render() {
+        return (<div class="install-me">
             <div>{system_error}</div>
-        </div>;
+        </div>);
     }
 }
 
@@ -902,8 +920,8 @@ class TrustMe: Reactor.Component {
         </div>;
     }
 
-    event click $(#trust-me) {
-        handler.is_process_trusted(true);
+    ["on click at #trust-me"] () {
+        handler.xcall("is_process_trusted",true);
         watch_trust();
     }
     
@@ -946,9 +964,9 @@ class InstallDaemon: Reactor.Component {
     }
 }
 
-class FixWayland: Reactor.Component {
-    function render() {
-        return <div .trust-me>
+class FixWayland extends Element {
+    render() {
+        return (<div class="trust-me">
             <div>{translate('Warning')}</div>
             <div>{translate('Login screen using Wayland is not supported')}</div>
             <div #help-me .link>{translate('Help')}</div>
@@ -960,9 +978,9 @@ class FixWayland: Reactor.Component {
     }
 }
 
-class ModifyDefaultLogin: Reactor.Component {
-    function render() {
-        return <div .trust-me>
+class ModifyDefaultLogin extends Element {
+    render() {
+        return (<div class="trust-me">
             <div>{translate('Warning')}</div>
             <div>{translate('wayland_experiment_tip')}</div>
             <div #help-me .link>{translate('Help')}</div>
@@ -979,9 +997,7 @@ function watch_trust() {
     var trusted = handler.is_process_trusted(false);
     var el = $(div#trust-me-box);
     if (el) {
-        el.style.set {
-            display: trusted ? "none" : "block",
-        };
+        el.style.setProperty("display", trusted ? "none" : "block");
     }
     if (trusted) {
         app.update();
@@ -1294,21 +1310,22 @@ class ID: Reactor.Component {
         value={formatId(handler.get_remote_id())} />;
     }
 
+    // TEST
     // https://github.com/c-smile/sciter-sdk/blob/master/doc/content/sciter/Event.htm
-    event change {
-        var fid = formatId(this.value);
-        var d = this.value.length - (this.old_value || "").length;
+    ["on change"]() {
+        let fid = formatId(this.value);
+        let d = this.value.length - (this.old_value || "").length;
         this.old_value = this.value;
-        var start = this.xcall(#selectionStart) || 0;
-        var end = this.xcall(#selectionEnd);
+        let start = this.xcall("selectionStart") || 0;
+        let end = this.xcall("selectionEnd");
         if (fid == this.value || d <= 0 || start != end) {
             return;
         }
         // fix Caret position
         this.value = fid;
-        var text_after_caret = this.old_value.substr(start);
-        var n = fid.length - formatId(text_after_caret).length;
-        this.xcall(#setSelection, n, n);
+        let text_after_caret = this.old_value.substr(start);
+        let n = fid.length - formatId(text_after_caret).length;
+        this.xcall("setSelection", n, n);
     }
 }
 
@@ -1316,10 +1333,10 @@ var reg = /^\d+$/;
 export function formatId(id) {
     id = id.replace(/\s/g, "");
     if (reg.test(id) && id.length > 3) {
-        var n = id.length;
-        var a = n % 3 || 3;
-        var new_id = id.substr(0, a);
-        for (var i = a; i < n; i += 3) {
+        let n = id.length;
+        let a = n % 3 || 3;
+        let new_id = id.substr(0, a);
+        for (let i = a; i < n; i += 3) {
             new_id += " " + id.substr(i, 3);
         }
         return new_id;
@@ -1410,8 +1427,8 @@ function self.ready() {
     } else {
         centerize(scaleIt(incoming_only ? incoming_only_width : 800), scaleIt(incoming_only ? 390 : 600));
     }
-    if (!handler.get_remote_id()) {
-        view.focus = $(#remote_id);
+    if (!handler.xcall("get_remote_id")) {
+        view.focus = $("#remote_id"); // TEST
     }
     refreshCurrentUser();
     updateTheme();
@@ -1448,7 +1465,7 @@ function checkConnectStatus() {
             using_public_server = tmp;
             app.connect_status.update();
         }
-        tmp = handler.get_connect_status();
+        tmp = handler.xcall("get_connect_status");
         if (tmp[0] != connect_status) {
             connect_status = tmp[0];
             app.connect_status.update();
@@ -1456,21 +1473,21 @@ function checkConnectStatus() {
         }
         if (tmp[1] != key_confirmed) {
             key_confirmed = tmp[1];
-            app.update();
+            app.update(); // TDOD
         }
         if (tmp[2] && tmp[2] != my_id) {
-            stdout.println("id updated");
-            app.update();
+            console.log("id updated");
+            app.update(); // TDOD
         }
-        tmp = handler.get_error();
+        tmp = handler.xcall("get_error");
         if (system_error != tmp) {
             system_error = tmp;
-            app.update();
+            app.update(); // TDOD
         }
-        tmp = handler.get_software_update_url();
+        tmp = handler.xcall("get_software_update_url");
         if (tmp != software_update_url) {
             software_update_url = tmp;
-            app.update();
+            app.update(); // TDOD
         }
         if (handler.recent_sessions_updated()) {
             stdout.println("recent sessions updated");

@@ -221,16 +221,27 @@ function getSessionsStyleOption(type) {
 }
 
 export function getSessionsStyle(type) {
-    var v = handler.get_local_option(getSessionsStyleOption(type));
+    var v = handler.xcall("get_local_option",getSessionsStyleOption(type));
     if (!v) v = type == "ab" ? "list" : "tile";
     return v;
 }
 
-class SearchBar extends Element {
+// Fixed
+// function stupidUpdate(me) {
+//     /* hidden is workaround of stupid sciter bug */
+//     me.hidden = true;
+//     me.update();
+//     self.timer(60ms, function() {
+//         me.hidden = false;
+//         me.update();
+//     });
+// }
+
+export class SearchBar extends Element {
     parent;
     value = "";
 
-    constructor(props) {
+    this(props) {
         this.parent = props.parent;
     }
 
@@ -261,10 +272,10 @@ class SearchBar extends Element {
     }
 }
 
-class SessionStyle extends Element {
+export class SessionStyle extends Element {
     type = "";
 
-    constructor(props) {
+    this(props) {
         this.type = (props || {}).type;
     }
 
@@ -288,13 +299,13 @@ class SessionStyle extends Element {
     }
 }
 
-class SessionList extends Element {
+export class SessionList extends Element {
     sessions = [];
     type = "";
     style;
     filterPattern = "";
 
-    constructor(props) {
+    this(props) {
         this.sessions = props.sessions;
         this.type = props.type;
         this.style = getSessionsStyle(props.type);
