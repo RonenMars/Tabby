@@ -27,7 +27,7 @@ if (incoming_only) {
   view.windowMinSize = (scaleIt(560), scaleIt(300));
 }
 
-export var app;
+export var app; // 注意判空
 var tmp = handler.xcall("get_connect_status");
 var connect_status = tmp[0];
 var service_stopped = handler.get_option("stop-service") == "Y";
@@ -100,6 +100,10 @@ class ConnectStatus: Reactor.Component {
 // TODO** SearchBar SessionStyle sessionsStyle SessionList
 // TODO @{this.sessionList} {!app.hidden && <SessionList @{this.sessionList} style={sessionsStyle} sessions={sessions} />}
 class RecentSessions extends Element {
+    sessionList;
+    componentDidMount(){
+        this.sessionList = this.$("#SessionList")
+    }
     render() {
         let sessions = handler.xcall("get_recent_sessions");
         if (sessions.length == 0) return <span />;
@@ -108,10 +112,10 @@ class RecentSessions extends Element {
                 <div style="width:*">
                     {translate("Recent Sessions")}
                 </div>
-                <SearchBar parent={this} />
+                {!app.hidden && <SearchBar parent={this} />}
                 {!app.hidden && <SessionStyle />}
             </div>
-            {!app.hidden && <SessionList />} 
+            {!app.hidden && <SessionList id="SessionList" sessions={sessions} />} 
         </div>);
     }
     // TODO TEST
@@ -772,7 +776,7 @@ class App: Reactor.Component
                                 <button .button #connect>{translate('Connect')}</button>
                             </div>
                         </div>
-                        <RecentSessions  />
+                        <RecentSessions id="RecentSessions" />
                     </div>
                     {!outgoing_only ? <ConnectStatus @{this.connect_status} /> : ""}
                 </div>}
@@ -1473,21 +1477,21 @@ function checkConnectStatus() {
         }
         if (tmp[1] != key_confirmed) {
             key_confirmed = tmp[1];
-            app.update(); // TDOD
+            app.componentUpdate();
         }
         if (tmp[2] && tmp[2] != my_id) {
             console.log("id updated");
-            app.update(); // TDOD
+            app.componentUpdate();
         }
         tmp = handler.xcall("get_error");
         if (system_error != tmp) {
             system_error = tmp;
-            app.update(); // TDOD
+            app.componentUpdate();
         }
         tmp = handler.xcall("get_software_update_url");
         if (tmp != software_update_url) {
             software_update_url = tmp;
-            app.update(); // TDOD
+            app.componentUpdate();
         }
         if (handler.recent_sessions_updated()) {
             stdout.println("recent sessions updated");

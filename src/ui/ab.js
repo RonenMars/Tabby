@@ -230,10 +230,10 @@ export function getSessionsStyle(type) {
 // function stupidUpdate(me) {
 //     /* hidden is workaround of stupid sciter bug */
 //     me.hidden = true;
-//     me.update();
+//     me.componentUpdate();
 //     self.timer(60ms, function() {
 //         me.hidden = false;
-//         me.update();
+//         me.componentUpdate();
 //     });
 // }
 
@@ -267,7 +267,7 @@ export class SearchBar extends Element {
 
     onChange(v) {
         this.value = v;
-        this.update(); // TODO update()
+        this.componentUpdate();
         this.parent.filter(v);
     }
 }
@@ -313,7 +313,7 @@ export class SessionList extends Element {
 
     filter(v) {
         this.filterPattern = v;
-        this.update(); // TODO update
+        this.componentUpdate();
     }
 
     getSessions() {
@@ -396,16 +396,16 @@ export class SessionList extends Element {
         </div >);
     }
 
-    // TEST dbclick
-    ["on dbclick at div.remote-session-link"](evt, me) {
+    ["on doubleclick at div.remote-session-link"](evt, me) {
         createNewConnect(me.id, "connect");
     }
 
-    // TODO #menu
     ["on click at #menu"](_, me) {
-        let id = me.parent.parent.id;
-        let platform = me.parent.parent.attributes["platform"]; // TODO attributes["platform"]
-        this.$("#rdp").style.setProperty("display", (platform == "Windows" && is_win) ? "block" : "none");
+        let id = me.parentElement.parentElement.id;
+        let platform = me.parentElement.parentElement.getAttribute("platform");
+        console.log("menu id,platform:",id,platform);
+        // TODO rdp
+        // this.$("#rdp").style.setProperty("display", (platform == "Windows" && is_win) ? "block" : "none"); 
         // https://sciter.com/forums/topic/replacecustomize-context-menu/
         var menu = this.$(menu#remote-context);
         current_menu_peer_id = id;
