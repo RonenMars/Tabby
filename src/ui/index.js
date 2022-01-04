@@ -97,8 +97,6 @@ class ConnectStatus: Reactor.Component {
     }
 }
 
-// TODO** SearchBar SessionStyle sessionsStyle SessionList
-// TODO @{this.sessionList} {!app.hidden && <SessionList @{this.sessionList} style={sessionsStyle} sessions={sessions} />}
 class RecentSessions extends Element {
     sessionList;
     componentDidMount(){
@@ -118,7 +116,7 @@ class RecentSessions extends Element {
             {!app.hidden && <SessionList id="SessionList" sessions={sessions} />} 
         </div>);
     }
-    // TODO TEST
+
     filter(v) {
         this.sessionList.filter(v);
     }

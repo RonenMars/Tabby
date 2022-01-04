@@ -257,7 +257,7 @@ export class SearchBar extends Element {
     }
 
     ["on click at span.clear-input"](_) {
-        this.search_id.value = '';
+        this.$("input").value = '';
         this.onChange('');
     }
 
