@@ -1,4 +1,7 @@
-view.windowFrame = is_osx ? #extended : #solid;
+import { handler,view,is_osx,string2RGB,adjustBorder,svg_chat,translate,ChatBox,getNowStr,setWindowButontsAndIcon,is_linux } from "./common.js";
+import {$,$$} from "@sciter";
+// TODO in sciterjs window-frame
+// view.windowFrame = is_osx ? #extended : #solid;
 
 var body;
 var connections = [];
@@ -16,11 +19,10 @@ function setWindowState(state) {
     view.windowState = state;
 }
 
-class Body: Reactor.Component
-{
-    this var cur = 0;
+class Body extends Element {
+    cur = 0;
 
-    function this() {
+    this() {
         body = this;
     }
 
@@ -32,10 +34,9 @@ class Body: Reactor.Component
         var c = connections[this.cur];
         this.connection = c;
         this.cid = c.id;
-        var auth = c.authorized;
-        var me = this;
-        var callback = function(msg) {
-            me.sendMsg(msg);
+        let auth = c.authorized;
+        let callback = (msg)=> {
+            this.sendMsg(msg);
         };
         var right_style = show_chat ? "" : "display: none";
         var permissions_locked = !allow_perm_change_in_accept_window;
@@ -94,16 +95,16 @@ class Body: Reactor.Component
             <div .right-panel style={right_style}>
                 {c.is_file_transfer || c.is_terminal || c.port_forward ? "" : <ChatBox msgs={c.msgs} callback={callback} />}
             </div>
-        </div>;
+        </div>);
     }
 
-    function sendMsg(text) {
+    sendMsg(text) {
         if (!text) return;
-        var { cid, connection } = this;
+        let { cid, connection } = this;
         checkClickTime(function() {
             connection.msgs.push({ name: "me", text: text, time: getNowStr()});
-            handler.send_msg(cid, text);
-            body.update();
+            handler.xcall("send_msg",cid, text);
+            body.componentUpdate();
         });
     }
 
@@ -112,8 +113,8 @@ class Body: Reactor.Component
         var { cid, connection } = this;
         checkClickTime(function() {
             connection.keyboard = !connection.keyboard;
-            body.update();
-            handler.switch_permission(cid, "keyboard", connection.keyboard);
+            body.componentUpdate();
+            handler.xcall("switch_permission",cid, "keyboard", connection.keyboard);
         });
     }
 
@@ -122,8 +123,8 @@ class Body: Reactor.Component
         var { cid, connection } = this;
         checkClickTime(function() {
             connection.clipboard = !connection.clipboard;
-            body.update();
-            handler.switch_permission(cid, "clipboard", connection.clipboard);
+            body.componentUpdate();
+            handler.xcall("switch_permission",cid, "clipboard", connection.clipboard);
         });
     }
 
@@ -132,8 +133,8 @@ class Body: Reactor.Component
         var { cid, connection } = this;
         checkClickTime(function() {
             connection.audio = !connection.audio;
-            body.update();
-            handler.switch_permission(cid, "audio", connection.audio);
+            body.componentUpdate();
+            handler.xcall("switch_permission",cid, "audio", connection.audio);
         });
     }
 
@@ -225,17 +226,23 @@ class Body: Reactor.Component
         });
     }
 
-    event click $(button#dismiss) {
-        var cid = this.cid;
+    ["on click at button#dismiss"]() {
+        let cid = this.cid;
         checkClickTime(function() {
-            handler.close(cid);
+            handler.close(cid); // TEST
         });
     }
 
-    event click $(button#disconnect) {
-        var cid = this.cid;
+    ["on click at button#disconnect"]() {
+        let cid = this.cid;
         checkClickTime(function() {
-            handler.close(cid);
+            handler.close(cid); // TEST
+        });
+    }
+    ["on click at div.chaticon"]() {
+        checkClickTime(function() {
+            show_chat = !show_chat;
+            adaptSize();
         });
     }
 
@@ -259,61 +266,56 @@ class Body: Reactor.Component
     }
 }
 
-$(body).content(<Body />);
+$("body").content(<Body />);
 
 var header;
 
-class Header: Reactor.Component
-{
-    function this() {
+class Header extends Element {
+    this() {
         header = this;
     }
 
-    function render() {
-        var me = this;
-        var conn = connections[body.cur];
-        if (conn && conn.unreaded > 0) {;
-            var el = me.select("#unreaded" + conn.id);
-            if (el) el.style.set {
-                display: "inline-block",
-            };
-            self.timer(300ms, function() {
+    render() {
+        let me = this;
+        let conn = connections[body.cur];
+        if (conn && conn.unreaded > 0) {
+            let el = this.select("#unreaded" + conn.id); // TODO select
+            if (el) el.style.setProperty("display","inline-block");
+            setTimeout(function() {
                 conn.unreaded = 0;
-                var el = me.select("#unreaded" + conn.id);
-                if (el) el.style.set {
-                    display: "none",
-                };
-            });
+                let el = this.select("#unreaded" + conn.id); // TODO
+                if (el) el.style.setProperty("display","none");
+            },300);
         }
-        var tabs = connections.map(function(c, i) { return me.renderTab(c, i) });
-        return <div .tabs-wrapper><div .tabs>
+        let tabs = connections.map((c, i)=> this.renderTab(c, i));
+        return (<div class="tabs-wrapper"><div class="tabs">
             {tabs}
             </div>
             <div .tab-arrows>
                 <span #left-arrow>&lt;</span>
                 <span #right-arrow>&gt;</span>
             </div>
-        </div>;
+        </div>);
     }
 
-    function renderTab(c, i) {
-        var cur = body.cur;
-        return <div class={i == cur ? "active-tab tab" : "tab"}>
+    renderTab(c, i) {
+        let cur = body.cur;
+        return (<div class={i == cur ? "active-tab tab" : "tab"}>
             {c.name}
-            {c.unreaded > 0 ? <span .unreaded id={"unreaded" + c.id}>{c.unreaded}</span> : ""}
-        </div>;
+            {c.unreaded > 0 ? <span class="unreaded" id={"unreaded" + c.id}>{c.unreaded}</span> : ""}
+        </div>);
     }
 
-    function update_cur(idx) {
-        checkClickTime(function() {
+    update_cur(idx) {
+        checkClickTime(function(){
             body.cur = idx;
             update();
-            self.timer(1ms, adjustHeader);
+            setTimeout(adjustHeader,1);
         });
     }
 
-    event click $(div.tab) (_, me) {
-        var idx = me.index;
+    ["on click at div.tab"] (_, me) {
+        let idx = me.index;
         if (idx == body.cur) return;
         this.update_cur(idx);
     }
@@ -332,10 +334,10 @@ class Header: Reactor.Component
 }
 
 if (is_osx) {
-    $(header).content(<Header />);
-    $(header).attributes["role"] = "window-caption";
+    $("header").content(<Header />);
+    $("header").attributes["role"] = "window-caption"; // TODO 
 } else {
-    $(div.window-toolbar).content(<Header />);
+    $("div.window-toolbar").content(<Header />);
     setWindowButontsAndIcon(true);
 }
 
@@ -372,21 +374,21 @@ function adaptSizeForChat() {
 }
 
 function update() {
-    header.update();
-    body.update();
+    header.componentUpdate();
+    body.componentUpdate();
 }
 
 function bring_to_top(idx=-1) {
-    if (view.windowState == View.WINDOW_HIDDEN || view.windowState == View.WINDOW_MINIMIZED) {
+    if (view.state == Window.WINDOW_HIDDEN || view.state == Window.WINDOW_MINIMIZED) {
         if (is_linux) {
-            view.focus = self;
+            view.focus = $("body");
         } else {
             setWindowState(View.WINDOW_SHOWN);
         }
         if (idx >= 0) body.cur = idx;
     } else {
-        view.windowTopmost = true;
-        view.windowTopmost = false;
+        view.isTopmost = true; // TEST
+        view.isTopmost = false; // TEST
     }
 }
 
@@ -426,7 +428,7 @@ handler.addConnection = function(id, is_file_transfer, is_view_camera, is_termin
     }
     bring_to_top();
     update();
-    self.timer(1ms, adjustHeader);
+    setTimeout(adjustHeader,1);
     if (authorized) {
         self.timer(3s, function() {
             setWindowState(View.WINDOW_MINIMIZED);
@@ -453,11 +455,11 @@ handler.removeConnection = function(id, close) {
 }
 
 handler.newMessage = function(id, text) { 
-    var idx = -1;
+    let idx = -1;
     connections.map(function(c, i) {
         if (c.id == id) idx = i;
     });
-    var conn = connections[idx];
+    let conn = connections[idx];
     if (!conn) return;
     conn.msgs.push({name: conn.name, text: text, time: getNowStr()});
     bring_to_top(idx);
@@ -477,17 +479,27 @@ handler.showElevation = function(show) {
     }
 }
 
-view << event statechange {
+// TEST
+// view << event statechange {
+//     adjustBorder();
+// }
+view.on("statechange",()=>{
     adjustBorder();
-}
+})
 
-function self.ready() {
+document.on("ready",()=>{
     adjustBorder();
     var (sw, sh) = view.screenBox(#workarea, #dimension);
     var w = scaleIt(300);
     var h = scaleIt(400);
     view.move(sw - w, 0, w, h);
-}
+})
+
+document.on("unloadequest",(evt)=>{
+    view.state = Window.WINDOW_HIDDEN;
+    console.log("cm unloadequest")
+    evt.preventDefault(); // prevent unloading TEST
+})
 
 function getElapsed(time, now) {
     var seconds = Date.diff(time, now, #seconds);
@@ -564,33 +576,24 @@ function adjustHeader() {
     var max = hw - 98;
     var need_width = n * wtab + scaleIt(2); // include border of active tab
     if (need_width < max) {
-        arrows.style.set {
-            display: "none",
-        };
-        tabs.style.set {
-            width: need_width,
-            margin-left: 0,
-        };
-        tabswrapper.style.set {
-            width: need_width,
-        };
+        arrows.style.setProperty("display","none");
+        tabs.style.setProperty("width",need_width);
+        tabs.style.setProperty("margin-left",0);
+        tabswrapper.style.setProperty("width",need_width);
     } else {
-        var margin = (body.cur + 1) * wtab - max + 30;
+        let margin = (body.cur + 1) * wtab - max + 30;
         if (margin < 0) margin = 0;
-        arrows.style.set {
-            display: "block",
-        };
-        tabs.style.set {
-            width: (max - 20 + margin) + 'px',
-            margin-left: -margin + 'px'
-        };
-        tabswrapper.style.set {
-            width: (max + 10) + 'px',
-        };
+        arrows.style.setProperty("display","block");
+        tabs.style.setProperty("width",(max - 20 + margin) + 'px');
+        tabs.style.setProperty("margin-left",-margin + 'px');
+        tabswrapper.style.setProperty("width",(max + 10) + 'px');
     }
 }
 
-view.on("size", adjustHeader);
+document.onsizechange = ()=>{
+    console.log("cm onsizechange");
+    adjustHeader();
+}
 
 // handler.addConnection(0, false, false, 0, "", "test1", true, false, false, true, true);
 // handler.addConnection(1, false, false, 0, "", "test2--------", true, false, false, false, false);
