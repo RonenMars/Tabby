@@ -46,24 +46,25 @@ function isRemoteLinux() {
     return get_peer_platform() == "Linux";
 }
 
-function adaptDisplay() {
-    var w = display_width;
-    var h = display_height;
+export function adaptDisplay() {
+    let w = display_width;
+    let h = display_height;
     if (!w || !h) return;
-    var style = handler.get_view_style();
+    let style = handler.xcall("get_view_style");
     display_scale = 1.;
     cursor_scale = 1.;
     var (sx, sy, sw, sh) = view.screenBox(view.windowState == View.WINDOW_FULL_SCREEN ? #frame : #workarea, #rectw);
     if (sw >= w && sh > h) {
-        var hh = $(header).box(#height, #border);
-        var el = $(div#adjust-window);
+        let hh = $("header").state.box("height", "border");
+        let el = $("div#adjust-window");
         if (sh > h + hh && el) {
-            el.style.set{ display: "block" };
-            el = $(li#adjust-window);
-            el.style.set{ display: "block" };
-            el.onClick = function() {
-                view.windowState == View.WINDOW_SHOWN;
-                var (x, y) = view.box(#position, #border, #screen);
+            el.style.setProperty("display","block");
+            el = $("li#adjust-window");
+            el.style.setProperty("display","block");
+            el.on("click",function() {
+                // TODO old:view.state == Window.WINDOW_SHOWN; 
+                view.state = Window.WINDOW_SHOWN;
+                let [x, y] = view.state.box("position", "border", "screen");
                 // extra for border
                 var extra = is_win ? 4 : 2;
                 view.move(x, y, (w + extra).toInteger(), (h + hh + extra).toInteger());
@@ -71,16 +72,17 @@ function adaptDisplay() {
         }
     }
     if (style != "original") {
-        var bw = $(body).box(#width, #border);
-        var bh = $(body).box(#height, #border);
-        if (view.windowState == View.WINDOW_FULL_SCREEN) {
+        let bw = $("body").state.box("width", "border");
+        let bh = $("body").state.box("height", "border");
+        if (view.state == Window.WINDOW_FULL_SCREEN) {
             bw = sw;
             bh = sh;
         }
         if (bw > 0 && bh > 0) {
-            var scale_x = bw.toFloat() / w;
-            var scale_y = bh.toFloat() / h;
-            var scale = scale_x < scale_y ? scale_x : scale_y;
+            // TEST del toFloat()
+            let scale_x = bw / w;
+            let scale_y = bh / h;
+            let scale = scale_x < scale_y ? scale_x : scale_y;
             if ((scale > 1 && style == "stretch") ||
                 (scale < 1 && style == "shrink")) {
                 display_scale = scale;
@@ -168,7 +170,7 @@ function accWheel(v, is_x) {
             } else {
                 v = abs_v;
             }
-            handler.send_mouse(3, is_x ? d : 0, !is_x ? d : 0, false, false, false, false);
+            handler.xcall("send_mouse",3, is_x ? d : 0, !is_x ? d : 0, false, false, false, false);
             accWheel(v, is_x);
             break;
         }
@@ -443,7 +445,7 @@ handler.setCursorData = function(id, hotx, hoty, width, height, colors) {
 }
 
 handler.setCursorId = function(id) {
-    var img = cursors[id];
+    let img = cursors[id];
     if (img) {
         cur_id = id;
         image_binded = true;
@@ -481,7 +483,7 @@ function self.ready() {
     var w = scaleIt(960);
     var h = scaleIt(640);
     if (is_file_transfer || is_port_forward) {
-        var r = handler.get_size();
+        let r = handler.xcall("get_size");
         if (isReasonableSize(r) && r[2] > 0) {
             view.move(r[0], r[1], r[2], r[3]);
         } else {
@@ -493,42 +495,42 @@ function self.ready() {
     if (!is_port_forward) connecting();
     if (is_file_transfer) initializeFileTransfer();
     if (is_port_forward) initializePortForward();
-}
+})
 
 var workarea_offset = 0;
 var size_adapted;
 handler.adaptSize = function() {
     if (size_adapted) return;
     size_adapted = true;
-    var (sx, sy, sw, sh) = view.screenBox(#workarea, #rectw);
-    var (fx, fy, fw, fh) = view.screenBox(#frame, #rectw);
+    let [sx, sy, sw, sh] = view.screenBox("workarea", "rectw");
+    let [fx, fy, fw, fh] = view.screenBox("frame", "rectw");
     if (is_osx) workarea_offset = sy;
-    var r = handler.get_size();
+    let r = handler.xcall("get_size");
     if (isReasonableSize(r) && r[2] > 0) {
         if (r[2] >= fw && r[3] >= fh && !is_linux) {
-            view.windowState = View.WINDOW_FULL_SCREEN;
-            stdout.println("Initialize to full screen");
+            view.state = Window.WINDOW_FULL_SCREEN;
+            console.log("Initialize to full screen");
         } else if (r[2] >= sw && r[3] >= sh) {
-            view.windowState = View.WINDOW_MAXIMIZED;
-            stdout.println("Initialize to full screen");
+            view.state = Window.WINDOW_MAXIMIZED;
+            console.log("Initialize to full screen");
         } else {
             view.move(r[0], r[1], r[2], r[3]);
         }
     } else {
-        var w = handler.box(#width, #border)
-        var h = handler.box(#height, #border)
+        let w = handler.state.box("width", "border")
+        let h = handler.state.box("height", "border")
         if (w >= sw || h >= sh) {
-            view.windowState = View.WINDOW_MAXIMIZED;
+            view.state = Window.WINDOW_MAXIMIZED;
             return;
         }
         // extra for border
-        var extra = 2;
-        centerize(w + extra, handler.box(#height, #border) + h + extra);
+        let extra = 2;
+        centerize(w + extra, handler.state.box("height", "border") + h + extra);
     }
 }
 
-function self.closing() {
-    var (x, y, w, h) = view.box(#rectw, #border, #screen);
+document.on("unloadequest",()=> {
+    let [x, y, w, h] = view.state.box("rectw", "border", "screen");
     if (is_file_transfer) save_file_transfer_close_state();
     if (is_file_transfer || is_port_forward || size_adapted) handler.save_size(x, y, w, h);
     if (recording) handler.record_screen(false, 0, display_width, display_height);
@@ -595,6 +597,7 @@ handler.setPermission = function(name, enabled) {
     });
 }
 
+// TODO
 handler.closeSuccess = function() {
     // handler.msgbox("success", "Successful", "Ready to go.");
     handler.msgbox("", "", "");

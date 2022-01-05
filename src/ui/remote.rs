@@ -433,7 +433,7 @@ impl DerefMut for SciterSession {
 
 impl sciter::EventHandler for SciterSession {
     fn get_subscription(&mut self) -> Option<EVENT_GROUPS> {
-        Some(EVENT_GROUPS::HANDLE_BEHAVIOR_EVENT)
+        Some(EVENT_GROUPS::HANDLE_METHOD_CALL | EVENT_GROUPS::HANDLE_SCRIPTING_METHOD_CALL | EVENT_GROUPS::HANDLE_BEHAVIOR_EVENT)
     }
 
     fn attached(&mut self, root: HELEMENT) {

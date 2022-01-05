@@ -1,14 +1,18 @@
-var pi = handler.get_default_pi(); // peer information
+import { handler,view,is_file_transfer,setWindowButontsAndIcon,translate,msgbox,adjustBorder,is_osx,is_xfce,svg_chat,svg_checkmark, is_linux } from "./common.js";
+import {$,$$} from "@sciter";
+import { adaptDisplay,is_port_forward } from "./remote.js";
+var pi = handler.xcall("get_default_pi"); // peer information
+
 var chat_msgs = [];
 
-var svg_fullscreen = <svg viewBox="0 0 357 357">
+const svg_fullscreen = (<svg viewBox="0 0 357 357">
     <path d="M51,229.5H0V357h127.5v-51H51V229.5z M0,127.5h51V51h76.5V0H0V127.5z M306,306h-76.5v51H357V229.5h-51V306z M229.5,0v51    H306v76.5h51V0H229.5z"/>
-</svg>;
-var svg_action = <svg viewBox="-91 0 512 512"><path d="M315 211H191L298 22a15 15 0 00-13-22H105c-6 0-12 4-14 10L1 281a15 15 0 0014 20h127L61 491a15 15 0 0025 16l240-271a15 15 0 00-11-25z"/></svg>;
-var svg_display = <svg viewBox="0 0 640 512">
+</svg>);
+const svg_action = (<svg viewBox="-91 0 512 512"><path d="M315 211H191L298 22a15 15 0 00-13-22H105c-6 0-12 4-14 10L1 281a15 15 0 0014 20h127L61 491a15 15 0 0025 16l240-271a15 15 0 00-11-25z"/></svg>);
+const svg_display = (<svg viewBox="0 0 640 512">
     <path d="M592 0H48A48 48 0 0 0 0 48v320a48 48 0 0 0 48 48h240v32H112a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16H352v-32h240a48 48 0 0 0 48-48V48a48 48 0 0 0-48-48zm-16 352H64V64h512z"/>
-</svg>;
-var svg_secure = <svg viewBox="0 0 347.97 347.97">
+</svg>);
+const svg_secure = (<svg viewBox="0 0 347.97 347.97">
 <path fill="#3F7D46" d="m317.31 54.367c-59.376 0-104.86-16.964-143.33-54.367-38.461 37.403-83.947 54.367-143.32 54.367 0 97.405-20.155 236.94 143.32 293.6 163.48-56.666 143.33-196.2 143.33-293.6zm-155.2 171.41-47.749-47.756 21.379-21.378 26.37 26.376 50.121-50.122 21.378 21.378-71.499 71.502z"/>
 </svg>;
 var svg_insecure = <svg viewBox="0 0 347.97 347.97"><path d="M317.469 61.615c-59.442 0-104.976-16.082-143.489-51.539-38.504 35.457-84.04 51.539-143.479 51.539 0 92.337-20.177 224.612 143.479 278.324 163.661-53.717 143.489-185.992 143.489-278.324z" fill="none" stroke="red" stroke-width="14.827"/><g fill="red"><path d="M238.802 115.023l-111.573 114.68-8.6-8.367L230.2 106.656z"/><path d="M125.559 108.093l114.68 111.572-8.368 8.601-114.68-111.572z"/></g></svg>;
@@ -17,45 +21,41 @@ var svg_secure_relay = <svg viewBox="0 0 347.97 347.97"><path d="M317.469 61.615
 var svg_recording_off = <svg t="1663505560063" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5393" width="32" height="32"><path d="M1002.666667 260.266667c-12.8-8.533333-29.866667-4.266667-42.666667 4.266666L725.333333 430.933333V298.666667c0-72.533333-55.466667-128-128-128H128C55.466667 170.666667 0 226.133333 0 298.666667v426.666666c0 72.533333 55.466667 128 128 128h469.333333c72.533333 0 128-55.466667 128-128v-132.266666l230.4 166.4c17.066667 12.8 46.933333 8.533333 59.733334-8.533334 4.266667-8.533333 8.533333-17.066667 8.533333-25.6V298.666667c0-17.066667-8.533333-29.866667-21.333333-38.4zM640 725.333333c0 25.6-17.066667 42.666667-42.666667 42.666667H128c-25.6 0-42.666667-17.066667-42.666667-42.666667V298.666667c0-25.6 17.066667-42.666667 42.666667-42.666667h469.333333c25.6 0 42.666667 17.066667 42.666667 42.666667v426.666666z m298.666667-81.066666L755.2 512 938.666667 379.733333v264.533334z" p-id="5394" fill="#8a8a8a"></path></svg>;
 var svg_recording_on = <svg t="1663505598640" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5644" width="32" height="32"><path d="M1002.666667 260.266667c-12.8-8.533333-29.866667-4.266667-42.666667 4.266666L725.333333 430.933333V298.666667c0-72.533333-55.466667-128-128-128H128C55.466667 170.666667 0 226.133333 0 298.666667v426.666666c0 72.533333 55.466667 128 128 128h469.333333c72.533333 0 128-55.466667 128-128v-132.266666l230.4 166.4c17.066667 12.8 46.933333 8.533333 59.733334-8.533334 4.266667-8.533333 8.533333-17.066667 8.533333-25.6V298.666667c0-17.066667-8.533333-29.866667-21.333333-38.4z" p-id="5645" fill="#2C8CFF"></path></svg>;
 
-var cur_window_state = view.windowState;
-function check_state_change() {
-    if (view.windowState != cur_window_state) {
-        stateChanged();
-    }
-    self.timer(30ms, check_state_change);
-}
 
 if (is_linux) {
-    check_state_change();
+    // check_state_change;
+    setInterval(() => {
+        if (view.state != cur_window_state) {
+            stateChanged();
+        }    
+    }, 30);
 } else {
-    view << event statechange {
+    view.on("statechange",()=>{
         stateChanged();
-    }
+    })
 }
 
 function get_id() {
-    return handler.get_option('alias') || handler.get_id()
+    return handler.xcall("get_option","alias") || handler.xcall("get_id")
 }
 
 function stateChanged() {
-    stdout.println('state changed from ' + cur_window_state + ' -> ' + view.windowState);
-    cur_window_state = view.windowState;
+    console.log('state changed from ' + cur_window_state + ' -> ' + view.state);
+    cur_window_state = view.state;
     adjustBorder();
     adaptDisplay();
-    if (cur_window_state != View.WINDOW_MINIMIZED) {
+    if (cur_window_state != Window.WINDOW_MINIMIZED) {
         view.focus = handler; // to make focus away from restore/maximize button, so that enter key work
     }
-    var fs = view.windowState == View.WINDOW_FULL_SCREEN;
-    var el = $(#fullscreen);
-    if (el) el.attributes.toggleClass("active", fs);
-    el = $(#maximize);
+    let fs = view.state == Window.WINDOW_FULL_SCREEN;
+    let el = $("#fullscreen");
+    if (el) el.classList.toggle("active", fs);
+    el = $("#maximize");
     if (el) {
-        el.state.disabled = fs;
+        el.state.disabled = fs; // TODO TEST
     }
     if (fs) {
-        $(header).style.set {
-            display: "none",
-        };
+        $("header").style.setProperty("display","none");
     }
 }
 
@@ -101,9 +101,9 @@ class Header: Reactor.Component {
         header = this;
     }
 
-    function render() {
-        var icon_conn;
-        var title_conn;
+    render() {
+        let icon_conn;
+        let title_conn;
         if (this.secure_connection && this.direct_connection) {
             icon_conn = svg_secure;
             title_conn = translate("Direct and encrypted connection");
@@ -129,13 +129,13 @@ class Header: Reactor.Component {
         if ((pi.displays || []).length == 0) {
             return <div .ellipsis style="size:*;text-align:center;margin:* 0;">{title}</div>;
         }
-        var screens = pi.displays.map(function(d, i) {
-            return <div #screen class={pi.current_display == i ? "current" : ""}>
+        let screens = pi.displays.map(function(d, i) {
+            return <div id="screen" class={pi.current_display == i ? "current" : ""}>
                 {i+1}
             </div>;
         });
         updateWindowToolbarPosition();
-        var style = "flow:horizontal;";
+        let style = "flow:horizontal;";
         if (is_osx) style += "margin:*";
         self.timer(1ms, updatePrivacyMode);
         self.timer(1ms, toggleMenuState);
@@ -155,8 +155,8 @@ class Header: Reactor.Component {
             {this.renderKeyboardPop()}
             {this.renderDisplayPop()}
             {this.renderActionPop()}
-        </div>;
-    }
+        </div>);
+    }    
 
     function renderKeyboardPop(){
         const is_map_mode_supported = handler.is_keyboard_mode_supported("map");
@@ -222,7 +222,7 @@ class Header: Reactor.Component {
                 {keyboard_enabled && ((is_osx && pi.platform != "Mac OS") || (!is_osx && pi.platform == "Mac OS")) ? <li #allow_swap_key  .toggle-option><span>{svg_checkmark}</span>{translate('Swap control-command key')}</li> : ""}
                 {handler.version_cmp(pi.version, '1.2.4') >= 0 ? <li #i444><span>{svg_checkmark}</span>{translate('True color (4:4:4)')}</li> : ""}
             </menu>
-        </popup>;
+        </popup>);
     }
 
     function renderActionPop() {
@@ -240,30 +240,30 @@ class Header: Reactor.Component {
                 {handler.is_screenshot_supported() ? <li #take-screenshot>{translate('Take screenshot')}</li> : "" }
                 <li #refresh>{translate('Refresh')}</li>
             </menu>
-        </popup>;
+        </popup>);
     }
 
-    function renderGlobalScreens() {
+    renderGlobalScreens() {
         if (pi.displays.length < 3) return "";
-        var x0 = 9999999;
-        var y0 = 9999999;
-        var x = -9999999;
-        var y = -9999999;
+        let x0 = 9999999;
+        let y0 = 9999999;
+        let x = -9999999;
+        let y = -9999999;
         pi.displays.map(function(d, i) {
             if (d.x < x0) x0 = d.x;
             if (d.y < y0) y0 = d.y;
-            var dx = d.x + d.width;
+            let dx = d.x + d.width;
             if (dx > x) x = dx;
-            var dy = d.y + d.height;
+            let dy = d.y + d.height;
             if (dy > y) y = dy;
         });
-        var w = x - x0;
-        var h = y - y0;
-        var scale = 16. / h;
-        var screens = pi.displays.map(function(d, i) {
-            var min_wh = d.width > d.height ? d.height : d.width;
-            var fs = min_wh * 0.9 * scale;
-            var style = "width:" + (d.width * scale) + "px;" +
+        let w = x - x0;
+        let h = y - y0;
+        let scale = 16. / h;
+        let screens = pi.displays.map(function(d, i) {
+            let min_wh = d.width > d.height ? d.height : d.width;
+            let fs = min_wh * 0.9 * scale;
+            let style = "width:" + (d.width * scale) + "px;" +
                         "height:" + (d.height * scale) + "px;" +
                         "left:" + ((d.x - x0) * scale) + "px;" +
                         "top:" + ((d.y - y0) * scale) + "px;" +
@@ -274,39 +274,39 @@ class Header: Reactor.Component {
             return <div style={style} class={pi.current_display == i ? "current" : ""}>{i+1}</div>;
         });
 
-        var style = "width:" + (w * scale) + "px; height:" + (h * scale) + "px;";
-        return <div #global-screens style={style}>
+        let style = "width:" + (w * scale) + "px; height:" + (h * scale) + "px;";
+        return <div id="global-screens" style={style}>
             {screens}
         </div>;
     }
 
-    event click $(#fullscreen) (_, el) {
-        if (view.windowState == View.WINDOW_FULL_SCREEN) {
-            if (old_window_state == View.WINDOW_MAXIMIZED) {
-                view.windowState = View.WINDOW_SHOWN;
+    ["on click at #fullscreen"](_, el) {
+        if (view.state == Window.WINDOW_FULL_SCREEN) {
+            if (old_window_state == Window.WINDOW_MAXIMIZED) {
+                view.state = Window.WINDOW_SHOWN;
             }
-            view.windowState = old_window_state;
+            view.state = old_window_state;
         } else {
-            old_window_state = view.windowState;
-            if (view.windowState == View.WINDOW_MAXIMIZED) {
-                view.windowState = View.WINDOW_SHOWN;
+            old_window_state = view.state;
+            if (view.state == Window.WINDOW_MAXIMIZED) {
+                view.state = Window.WINDOW_SHOWN;
             }
-            view.windowState = View.WINDOW_FULL_SCREEN;
-            if (is_linux) { self.timer(150ms, function() { view.windowState = View.WINDOW_FULL_SCREEN; }); }
+            view.state = Window.WINDOW_FULL_SCREEN;
+            if (is_linux) { setTimeout(()=>view.state = Window.WINDOW_FULL_SCREEN,150); }
         }
     }
     
-    event click $(#chat) {
+    ["on click at #chat"]() {
         startChat();
     }
     
-    event click $(#action) (_, me) {
-        var menu = $(menu#action-options);
+    ["on click at #action"](_, me) {
+        let menu = $("menu#action-options");
         me.popup(menu);
     }
 
-    event click $(#display) (_, me) {
-        var menu = $(menu#display-options);
+    ["on click at #display"](_, me) {
+        let menu = $("menu#display-options");
         me.popup(menu);
     }
 
@@ -322,7 +322,7 @@ class Header: Reactor.Component {
 
     event click $(#screen) (_, me) {
         if (pi.current_display == me.index) return;
-        handler.switch_display(me.index);
+        handler.xcall("switch_display",me.index);
     }
     
     event keyup (evt) {
@@ -335,8 +335,8 @@ class Header: Reactor.Component {
         }
     }
 
-    event click $(#transfer-file) {
-        handler.transfer_file();
+    ["on click at #transfer-file"]() {
+        handler.xcall("transfer_file");
     }
     
     event click $(#os-password) (evt) {
@@ -349,8 +349,8 @@ class Header: Reactor.Component {
         else handler.input_os_password(p, true);
     }
 
-    event click $(#tunnel) {
-        handler.tunnel();
+    ["on click at #tunnel"] () {
+        handler.xcall("tunnel");
     }
 
     event click $(#note) {
@@ -394,13 +394,13 @@ class Header: Reactor.Component {
         handler.refresh_video(0);
     }
 
-    event click $(#block-input) {
+    ["on click at #block-input"] (_,me) {
         if (!input_blocked) {
-            handler.toggle_option("block-input");
+            handler.xcall("toggle_option","block-input");
             input_blocked = true;
             $(#block-input).text = translate("Unblock user input");
         } else {
-            handler.toggle_option("unblock-input");
+            handler.xcall("toggle_option","unblock-input");
             input_blocked = false;
             $(#block-input).text = translate("Block user input");
         }
@@ -419,11 +419,11 @@ class Header: Reactor.Component {
             handler.toggle_option(me.id);
             toggleMenuState();
         } else if (!me.attributes.hasClass("selected")) {
-            var type =  me.attributes["type"];
+            let type =  me.attributes["type"];
             if (type == "image-quality") {
-                handler.save_image_quality(me.id);
+                handler.xcall("save_image_quality",me.id);
             } else if (type == "view-style") {
-                handler.save_view_style(me.id);
+                handler.xcall("save_view_style",me.id);
                 adaptDisplay();
             } else if (type == "codec-preference") {
                 handler.set_option("codec-preference", me.id);
@@ -471,11 +471,11 @@ function handle_custom_image_quality() {
 }
 
 function toggleMenuState() {
-    var values = [];
-    var q = handler.get_image_quality();
+    let values = [];
+    let q = handler.xcall("get_image_quality");
     if (!q) q = "balanced";
     values.push(q);
-    var s = handler.get_view_style();
+    let s = handler.xcall("get_view_style");
     if (!s) s = "original";
     values.push(s);
     var k = handler.get_keyboard_mode();
@@ -499,25 +499,21 @@ function toggleMenuState() {
 }
 
 if (is_osx) {
-    $(header).content(<Header />);
-    $(header).attributes["role"] = "window-caption";
+    $("header").content(<Header />);
+    $("header").attributes["role"] = "window-caption"; // TODO 
 } else {
     if (is_file_transfer || is_port_forward) {
-        $(caption).content(<Header />);
+        $("caption").content(<Header />);
     } else {
-        $(div.window-toolbar).content(<Header />);
+        $("div.window-toolbar").content(<Header />);
     }
     setWindowButontsAndIcon();
 }
 
 if (!(is_file_transfer || is_port_forward)) {
-    $(header).style.set {
-        height: "32px",
-    };
+    $("header").style.setProperty("height","32px");
     if (!is_osx) {
-        $(div.window-icon).style.set {
-            size: "32px",
-        };
+        $("div.window-icon").style.setProperty("size","32px");
     }
 }
 
@@ -526,7 +522,7 @@ handler.updatePi = function(v) {
     recording = handler.is_recording();
     header.update();
     if (is_port_forward) {
-        view.windowState = View.WINDOW_MINIMIZED;
+        view.state = Window.WINDOW_MINIMIZED;
     }
 }
 
@@ -643,7 +639,7 @@ handler.updateBlockInputState = function(input_blocked) {
 
 handler.switchDisplay = function(i) {
     pi.current_display = i;
-    header.update();
+    header.componentUpdate();
 }
 
 function updateWindowToolbarPosition() {
@@ -660,13 +656,13 @@ function updateWindowToolbarPosition() {
     });
 }
 
-view.on("size", function() {
+view.onsizechange = function() {
     // ensure size is done, so add timer
-    self.timer(1ms, function() {
+    setTimeout(function() {
         updateWindowToolbarPosition();
         adaptDisplay();
-    });
-});
+    },1);
+};
 
 handler.newMessage = function(text) {
     chat_msgs.push({text: text, name: pi.username || "", time: getNowStr()});
@@ -675,15 +671,15 @@ handler.newMessage = function(text) {
 
 function sendMsg(text) {
     chat_msgs.push({text: text, name: "me", time: getNowStr()});
-    handler.send_chat(text);
+    handler.xcall("send_chat",text);
     if (chatbox) chatbox.refresh();
 }
 
 var chatbox;
 function startChat() {
     if (chatbox) {
-        chatbox.windowState = View.WINDOW_SHOWN;
-        chatbox.refresh();
+        chatbox.state = Window.WINDOW_SHOWN; // TODO TEST el.state
+        chatbox.refresh(); // TODO el.refresh
         return;
     }
     var icon = handler.get_icon();
@@ -702,10 +698,10 @@ function startChat() {
         parameters: { msgs: chat_msgs, callback: sendMsg, icon: icon },
         caption: get_id(),
     };
-    var html = handler.get_chatbox();
+    let html = handler.xcall("get_chatbox");
     if (html) params.html = html;
-    else params.url = self.url("chatbox.html");
-    chatbox = view.window(params);
+    else params.url = document.url("chatbox.html");
+    chatbox = view.window(params); // TEST
 }
 
 handler.setConnectionType = function(secured, direct, stream_type) {
