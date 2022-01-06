@@ -11,7 +11,8 @@ export const is_linux = OS == "Linux";
 
 view.mediaVar("is_osx", is_osx);
 view.mediaVar("not_osx", !is_osx);
-export var is_file_transfer;
+handler.is_port_forward = false;
+handler.is_file_transfer = false;
 export var is_xfce = false;
 try { is_xfce = handler.xcall("is_xfce"); } catch (e) { }
 

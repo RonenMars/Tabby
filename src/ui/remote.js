@@ -62,9 +62,8 @@ export function adaptDisplay() {
             el = $("li#adjust-window");
             el.style.setProperty("display","block");
             el.on("click",function() {
-                // TODO old:view.state == Window.WINDOW_SHOWN; 
                 view.state = Window.WINDOW_SHOWN;
-                let [x, y] = view.state.box("position", "border", "screen");
+                let [x, y] = body.state.box("position", "border", "screen"); // TEST
                 // extra for border
                 var extra = is_win ? 4 : 2;
                 view.move(x, y, (w + extra).toInteger(), (h + hh + extra).toInteger());
@@ -72,8 +71,8 @@ export function adaptDisplay() {
         }
     }
     if (style != "original") {
-        let bw = $("body").state.box("width", "border");
-        let bh = $("body").state.box("height", "border");
+        let bw = body.state.box("width", "border");
+        let bh = body.state.box("height", "border");
         if (view.state == Window.WINDOW_FULL_SCREEN) {
             bw = sw;
             bh = sh;
@@ -492,9 +491,9 @@ function self.ready() {
     } else {
         centerize(w, h);
     }
-    if (!is_port_forward) connecting();
-    if (is_file_transfer) initializeFileTransfer();
-    if (is_port_forward) initializePortForward();
+    if (!handler.is_port_forward) connecting();
+    if (handler.is_file_transfer) initializeFileTransfer();
+    if (handler.is_port_forward) initializePortForward();
 })
 
 var workarea_offset = 0;
@@ -600,5 +599,6 @@ handler.setPermission = function(name, enabled) {
 // TODO
 handler.closeSuccess = function() {
     // handler.msgbox("success", "Successful", "Ready to go.");
+    console.log("remote.js handler.closeSuccess");
     handler.msgbox("", "", "");
 }

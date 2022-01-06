@@ -1,6 +1,6 @@
-import { handler,view,is_file_transfer,setWindowButontsAndIcon,translate,msgbox,adjustBorder,is_osx,is_xfce,svg_chat,svg_checkmark, is_linux } from "./common.js";
+import { handler,view,setWindowButontsAndIcon,translate,msgbox,adjustBorder,is_osx,is_xfce,svg_chat,svg_checkmark, is_linux } from "./common.js";
 import {$,$$} from "@sciter";
-import { adaptDisplay,is_port_forward } from "./remote.js";
+import { adaptDisplay, audio_enabled, clipboard_enabled, keyboard_enabled } from "./remote.js";
 var pi = handler.xcall("get_default_pi"); // peer information
 
 var chat_msgs = [];
@@ -502,7 +502,7 @@ if (is_osx) {
     $("header").content(<Header />);
     $("header").attributes["role"] = "window-caption"; // TODO 
 } else {
-    if (is_file_transfer || is_port_forward) {
+    if (handler.is_file_transfer || handler.is_port_forward) {
         $("caption").content(<Header />);
     } else {
         $("div.window-toolbar").content(<Header />);
@@ -510,7 +510,7 @@ if (is_osx) {
     setWindowButontsAndIcon();
 }
 
-if (!(is_file_transfer || is_port_forward)) {
+if (!(handler.is_file_transfer || handler.is_port_forward)) {
     $("header").style.setProperty("height","32px");
     if (!is_osx) {
         $("div.window-icon").style.setProperty("size","32px");
