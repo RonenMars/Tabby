@@ -226,23 +226,12 @@ export function getSessionsStyle(type) {
     return v;
 }
 
-// Fixed
-// function stupidUpdate(me) {
-//     /* hidden is workaround of stupid sciter bug */
-//     me.hidden = true;
-//     me.componentUpdate();
-//     self.timer(60ms, function() {
-//         me.hidden = false;
-//         me.componentUpdate();
-//     });
-// }
+var searchPatterns = {};
 
 export class SearchBar extends Element {
-    parent;
-    value = "";
 
     this(props) {
-        this.parent = props.parent;
+        this.type = (props || {}).type || "";
     }
 
     function render() {
@@ -266,9 +255,8 @@ export class SearchBar extends Element {
     }
 
     onChange(v) {
-        this.value = v;
-        this.componentUpdate();
-        this.parent.filter(v);
+        searchPatterns[this.type] = v;
+        app.multipleSessions.update();
     }
 }
 
@@ -276,12 +264,12 @@ export class SessionStyle extends Element {
     type = "";
 
     this(props) {
-        this.type = (props || {}).type;
+        this.type = (props || {}).type || "";
     }
 
     render() {
         let sessionsStyle = getSessionsStyle(this.type);
-        return (<div class="sessions-style" >
+        return (<div class="sessions-tab" style="margin-left: 0.5em;">
             <span class={sessionsStyle == "tile" ? "active" : "inactive"}>{svg_tile}</span>
             <span class={sessionsStyle != "tile" ? "active" : "inactive"}>{svg_list}</span>
         </div>);
@@ -303,7 +291,7 @@ export class SessionList extends Element {
     sessions = [];
     type = "";
     style;
-    filterPattern = "";
+
 
     this(props) {
         this.sessions = props.sessions;
@@ -311,13 +299,8 @@ export class SessionList extends Element {
         this.style = getSessionsStyle(props.type);
     }
 
-    filter(v) {
-        this.filterPattern = v;
-        this.componentUpdate();
-    }
-
     getSessions() {
-        let p = this.filterPattern;
+        let p = searchPatterns[this.type];
         if (!p) return this.sessions;
         var tmp = [];
         this.sessions.map(function(s) {
@@ -371,7 +354,7 @@ export class SessionList extends Element {
         if (this.style == "list") {
             return (<div class="remote-session-link remote-session-list" id={id} platform={platform} title={alias ? "ID: " + id : ""} >
                 <div class="platform" style={"background:" + string2RGB(id + platform, 0.5)}>
-                    {platformSvg(platform, "white")}
+                    {platform && platformSvg(platform, "white")}
                 </div>
                 <div class="name">
                     <div>
@@ -386,7 +369,7 @@ export class SessionList extends Element {
         }
         return (<div class="remote-session-link remote-session" id={id} platform={platform} title={alias ? "ID: " + id : ""} style={"background:" + string2RGB(id + platform, 0.5)} >
             <div class="platform">
-                {platformSvg(platform, "white")}
+                {platform && platformSvg(platform, "white")}
                 <div class="username ellipsis">{username}@{hostname}</div>
             </div>
             <div class="text">
@@ -403,9 +386,23 @@ export class SessionList extends Element {
     ["on click at #menu"](_, me) {
         let id = me.parentElement.parentElement.id;
         let platform = me.parentElement.parentElement.getAttribute("platform");
-        console.log("menu id,platform:",id,platform);
-        // TODO rdp
-        // this.$("#rdp").style.setProperty("display", (platform == "Windows" && is_win) ? "block" : "none"); 
+        this.$("#rdp").style.setProperty(
+            "display", (platform == "Windows" && is_win) ? "block" : "none",
+        );
+        this.$("#forget-password").style.setProperty(
+            "display", handler.xcall("peer_has_password", id) ? "block" : "none",
+        );
+        if (!this.type || this.type == "fav") {
+            let in_fav = handler.xcall("get_fav").indexOf(id) >= 0;
+            let el = this.$("add-fav");
+            if (el) el.style.setProperty(
+                "display", in_fav ? "none" : "block",
+            );
+            el = this.$("remove-fav");
+            if (el) el.style.setProperty(
+                "display", in_fav ? "block" : "none",
+            );
+        }
         // https://sciter.com/forums/topic/replacecustomize-context-menu/
         var menu = this.$(menu#remote-context);
         current_menu_peer_id = id;
@@ -528,20 +525,20 @@ export class SessionList extends Element {
 }
 
 function getSessionsType() {
-    return handler.get_local_option("show-sessions-type");
+    return handler.xcall("get_local_option", "show-sessions-type");
 }
 
-class Favorites: Reactor.Component {
-    function render() {
-        var sessions = handler.get_fav().map(function(f) {
-            return handler.get_peer(f);
+class Favorites extends Element {
+    render() {
+        var sessions = handler.xcall("get_fav").map(function(f) {
+            return handler.xcall("get_peer", f);
         });
         return <SessionList sessions={sessions} type="fav" />;
     }
 }
 
-class MultipleSessions: Reactor.Component {
-    function render() {
+export class MultipleSessions extends Element {
+    render() {
         var type = getSessionsType();
         return  <div style="size: *">
                 <div .sessions-bar>

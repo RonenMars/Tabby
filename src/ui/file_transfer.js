@@ -12,7 +12,7 @@ const svg_trash = (<svg viewBox="0 0 473.41 473.41">
 <path transform="matrix(.064 -.998 .998 .064 -.546 19.418)" d="m-360.4 301.29h207.54v29.592h-207.54z"/>
 <path transform="matrix(.998 -.064 .064 .998 -.628 .399)" d="m141.64 202.35h29.592v207.54h-29.592z"/>
 </svg>);
-const svg_arrow = (<svg viewBox="0 0 482.24 482.24">
+export const svg_arrow = (<svg viewBox="0 0 482.24 482.24">
 <path d="m206.81 447.79-206.81-206.67 206.74-206.67 24.353 24.284-165.17 165.17h416.31v34.445h-416.31l165.24 165.24z"/>
 </svg>);
 const svg_home = (<svg viewBox="0 0 476.91 476.91">

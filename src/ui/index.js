@@ -97,31 +97,6 @@ class ConnectStatus: Reactor.Component {
     }
 }
 
-class RecentSessions extends Element {
-    sessionList;
-    componentDidMount(){
-        this.sessionList = this.$("#SessionList")
-    }
-    render() {
-        let sessions = handler.xcall("get_recent_sessions");
-        if (sessions.length == 0) return <span />;
-        return (<div style="width: *">
-            <div class="sessions-bar">
-                <div style="width:*">
-                    {translate("Recent Sessions")}
-                </div>
-                {!app.hidden && <SearchBar parent={this} />}
-                {!app.hidden && <SessionStyle />}
-            </div>
-            {!app.hidden && <SessionList id="SessionList" sessions={sessions} />} 
-        </div>);
-    }
-
-    filter(v) {
-        this.sessionList.filter(v);
-    }
-}
-
 export function createNewConnect(id, type) {
     id = id.replace(/\s/g, "");
     app.remote_id.value = formatId(id);
@@ -151,8 +126,8 @@ class ShareRdp: Reactor.Component {
 }
 
 var direct_server;
-class DirectServer: Reactor.Component {
-    function this() {
+class DirectServer extends Element {
+    this() {
         direct_server = this;
     }
 
@@ -774,7 +749,7 @@ class App: Reactor.Component
                                 <button .button #connect>{translate('Connect')}</button>
                             </div>
                         </div>
-                        <RecentSessions id="RecentSessions" />
+                        <MultipleSessions id="multipleSessions" />
                     </div>
                     {!outgoing_only ? <ConnectStatus @{this.connect_status} /> : ""}
                 </div>}
@@ -876,7 +851,6 @@ class UpdateMe extends Element {
     event click $(#install-me) {
         handler.open_url("https://rustdesk.com/download");
         return;
-        // TODO return?
         if (!is_win) {
             handler.xcall("open_url","https://rustdesk.com");
             return;
