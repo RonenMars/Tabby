@@ -2195,6 +2195,11 @@ class CanvasModel with ChangeNotifier {
   // after showing the soft keyboard.
   bool isMobileCanvasChanged = false;
 
+  // Height of persistent bottom overlays (e.g. PowerStrip) that are always
+  // visible. Subtracted from the canvas height in getSize() so the panning
+  // boundary never lets content slide behind the strip.
+  double mobileBottomOverlayHeight = 0.0;
+
   final ScrollController _horizontal = ScrollController();
   final ScrollController _vertical = ScrollController();
 
@@ -2255,12 +2260,14 @@ class CanvasModel with ChangeNotifier {
     if (isMobile) {
       // Account for horizontal safe area insets on both orientations.
       w = w - mediaData.padding.left - mediaData.padding.right;
-      // Vertically, subtract the bottom keyboard inset (viewInsets.bottom) and any
-      // bottom overlay (e.g. key-help tools) so the canvas is not covered.
+      // Vertically, subtract the bottom keyboard inset (viewInsets.bottom), any
+      // bottom overlay (e.g. key-help tools), and the persistent bottom overlay
+      // (e.g. PowerStrip) so the canvas is not covered.
       h = h -
           mediaData.viewInsets.bottom -
           (parent.target?.cursorModel.keyHelpToolsRectToAdjustCanvas?.bottom ??
-              0);
+              0) -
+          mobileBottomOverlayHeight;
       // Orientation-specific handling:
       //  - Portrait: additionally subtract top padding (e.g. status bar / notch)
       //  - Landscape: does not subtract mediaData.padding.top/bottom (home indicator auto-hides)

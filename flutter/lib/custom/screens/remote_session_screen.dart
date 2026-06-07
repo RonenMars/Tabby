@@ -226,14 +226,25 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
     setState(() => _chatState = _chatState == _ChatState.closed
         ? _ChatState.partial
         : _ChatState.closed);
+    _syncStripOverlay();
   }
 
   void _onChatMaximize() {
     setState(() => _chatState = _ChatState.max);
+    widget.ffi.canvasModel.mobileBottomOverlayHeight = 0.0;
+    widget.ffi.canvasModel.updateViewStyle();
   }
 
   void _onChatMinimize() {
     setState(() => _chatState = _ChatState.partial);
+    _syncStripOverlay();
+  }
+
+  void _syncStripOverlay() {
+    final mq = MediaQuery.of(context);
+    widget.ffi.canvasModel.mobileBottomOverlayHeight =
+        mq.viewPadding.bottom + _stripHeight;
+    widget.ffi.canvasModel.updateViewStyle();
   }
 
   void _onDisplaySwitch() {
@@ -383,7 +394,12 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
             bottom: stripBottom,
             child: _MeasureHeight(
               onChange: (h) {
-                if (h != _stripHeight) setState(() => _stripHeight = h);
+                if (h != _stripHeight) {
+                  setState(() => _stripHeight = h);
+                  final safeB = MediaQuery.of(context).viewPadding.bottom;
+                  widget.ffi.canvasModel.mobileBottomOverlayHeight = safeB + h;
+                  widget.ffi.canvasModel.updateViewStyle();
+                }
               },
               child: PowerStrip(
                 inputBridge: _bridge,
