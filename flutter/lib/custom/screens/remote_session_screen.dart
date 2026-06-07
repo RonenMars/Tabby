@@ -256,7 +256,7 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
     final count = pi.displays.length;
     if (count <= 1) return;
     final next = (pi.currentDisplay + 1) % count;
-    openMonitorInTheSameTab(next, widget.ffi, pi);
+    openMonitorInTheSameTab(next, widget.ffi, pi, updateCursorPos: true);
   }
 
   void _onZoomFit() {

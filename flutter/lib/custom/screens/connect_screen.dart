@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../common.dart';
 import '../../common/formatter/id_formatter.dart';
+import '../../common/widgets/dialog.dart' show renameDialog;
 import '../../mobile/widgets/dialog.dart' show showServerSettings;
 import '../../models/model.dart';
 import '../../models/peer_model.dart';
@@ -153,8 +154,8 @@ class _PeerIdField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      inputFormatters: [IDTextInputFormatter()],
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.url,
+      autocorrect: false,
       textInputAction: TextInputAction.next,
       textAlign: TextAlign.center,
       style: const TextStyle(
@@ -292,10 +293,20 @@ class _PeerTile extends StatelessWidget {
   final Peer peer;
   final VoidCallback onTap;
 
+  void _onRename() {
+    renameDialog(
+      oldName: peer.alias,
+      onSubmit: (String newName) async {
+        await bind.mainSetPeerAlias(id: peer.id, alias: newName);
+        await bind.mainLoadRecentPeers();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final label = peer.alias.isNotEmpty ? peer.alias : peer.id;
-    final subtitle = peer.hostname.isNotEmpty ? peer.hostname : null;
+    final subtitle = peer.alias.isNotEmpty ? peer.id : (peer.hostname.isNotEmpty ? peer.hostname : null);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTokens.spaceSm),
@@ -304,6 +315,7 @@ class _PeerTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTokens.radiusCard),
         child: InkWell(
           onTap: onTap,
+          onLongPress: _onRename,
           borderRadius: BorderRadius.circular(AppTokens.radiusCard),
           child: Padding(
             padding: const EdgeInsets.symmetric(
