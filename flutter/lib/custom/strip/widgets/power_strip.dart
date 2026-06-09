@@ -58,7 +58,6 @@ class _PowerStripState extends State<PowerStrip> {
   final Map<String, LayerLink> _cellLinks = {};
   OverlayEntry? _cmdPopup;
   String? _cmdPopupModifier;
-  OverlayEntry? _arrowOverlay;
 
   static const double _popupW = 44.0;
   static const double _popupH = 36.0;
@@ -75,7 +74,6 @@ class _PowerStripState extends State<PowerStrip> {
   void dispose() {
     widget.modifierController.removeListener(_onModifierChanged);
     _dismissCmdPopup();
-    _dismissArrowOverlay();
     super.dispose();
   }
 
@@ -95,11 +93,6 @@ class _PowerStripState extends State<PowerStrip> {
     _cmdPopup?.remove();
     _cmdPopup = null;
     _cmdPopupModifier = null;
-  }
-
-  void _dismissArrowOverlay() {
-    _arrowOverlay?.remove();
-    _arrowOverlay = null;
   }
 
   List<(String, String, Set<String>)> _popupLabelsFor(String modifier) {
@@ -266,134 +259,6 @@ class _PowerStripState extends State<PowerStrip> {
     );
   }
 
-  void _showArrowOverlay(KeyDef k) {
-    _dismissArrowOverlay();
-    final link = _cellLink('arrowCross');
-    final crossW = _popupW * 3 + _popupGap * 2;
-    final crossH = _popupH * 3 + _popupGap * 2;
-
-    _arrowOverlay = OverlayEntry(
-      builder: (ctx) {
-        final shift = _horizontalShiftFor(ctx, link, crossW);
-        return Positioned(
-          left: 0,
-          top: 0,
-          child: CompositedTransformFollower(
-            link: link,
-            showWhenUnlinked: false,
-            targetAnchor: Alignment.topCenter,
-            followerAnchor: Alignment.bottomCenter,
-            offset: Offset(shift, -_popupAnchorGap),
-            child: Material(
-              color: Colors.transparent,
-              child: SizedBox(
-                width: crossW,
-                height: crossH,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(width: _popupW, height: _popupH),
-                        const SizedBox(width: _popupGap),
-                        _arrowButton('↑', 'up'),
-                        const SizedBox(width: _popupGap),
-                        const SizedBox(width: _popupW, height: _popupH),
-                      ],
-                    ),
-                    const SizedBox(height: _popupGap),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _arrowButton('←', 'left'),
-                        const SizedBox(width: _popupGap),
-                        _arrowCloseButton(),
-                        const SizedBox(width: _popupGap),
-                        _arrowButton('→', 'right'),
-                      ],
-                    ),
-                    const SizedBox(height: _popupGap),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(width: _popupW, height: _popupH),
-                        const SizedBox(width: _popupGap),
-                        _arrowButton('↓', 'down'),
-                        const SizedBox(width: _popupGap),
-                        const SizedBox(width: _popupW, height: _popupH),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-    Overlay.of(context, rootOverlay: true).insert(_arrowOverlay!);
-  }
-
-  Widget _arrowButton(String label, String keyName) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        widget.inputBridge.tapKey(keyName);
-      },
-      child: Container(
-        width: _popupW,
-        height: _popupH,
-        decoration: BoxDecoration(
-          color: AppTokens.colorPrimary,
-          borderRadius: BorderRadius.circular(AppTokens.radiusKey),
-          boxShadow: const [
-            BoxShadow(
-              blurRadius: 6,
-              color: Colors.black38,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style:
-              AppTokens.fontKey.copyWith(color: Colors.white, fontSize: 14),
-        ),
-      ),
-    );
-  }
-
-  Widget _arrowCloseButton() {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _dismissArrowOverlay();
-      },
-      child: Container(
-        width: _popupW,
-        height: _popupH,
-        decoration: BoxDecoration(
-          color: AppTokens.colorBgSurface,
-          borderRadius: BorderRadius.circular(AppTokens.radiusKey),
-          boxShadow: const [
-            BoxShadow(
-              blurRadius: 6,
-              color: Colors.black38,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          '✕',
-          style: AppTokens.fontKey
-              .copyWith(color: AppTokens.colorTextHigh, fontSize: 14),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -485,10 +350,8 @@ class _PowerStripState extends State<PowerStrip> {
     );
     final hasPopup = k.type == KeyType.modifier &&
         (k.keyName == 'meta' || k.keyName == 'control' || k.keyName == 'alt');
-    final isArrowCross = k.type == KeyType.arrowCross;
-    final linkKey = isArrowCross ? 'arrowCross' : k.keyName;
-    if (hasPopup || isArrowCross) {
-      final link = _cellLink(linkKey);
+    if (hasPopup) {
+      final link = _cellLink(k.keyName);
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 2 * scale),
         child: CompositedTransformTarget(
@@ -542,11 +405,8 @@ class _PowerStripState extends State<PowerStrip> {
       case KeyType.fileSend:
         widget.onFileSend();
       case KeyType.arrowCross:
-        if (_arrowOverlay != null) {
-          _dismissArrowOverlay();
-        } else {
-          _showArrowOverlay(k);
-        }
+        // arrowCross removed — individual arrow keys added directly to strip
+        break;
       case KeyType.typeString:
         if (k.keyString != null) {
           widget.inputBridge.typeString(k.keyString!);
