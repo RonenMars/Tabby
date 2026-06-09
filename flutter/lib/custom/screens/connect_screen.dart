@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../common.dart';
@@ -22,16 +24,19 @@ class _ConnectScreenState extends State<ConnectScreen> {
   final _idController = IDTextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  Timer? _onlineCheckTimer;
 
   @override
   void initState() {
     super.initState();
     bind.mainLoadRecentPeers();
     gFFI.recentPeersModel.addListener(_onPeersChanged);
+    _startOnlineCheck();
   }
 
   @override
   void dispose() {
+    _onlineCheckTimer?.cancel();
     gFFI.recentPeersModel.removeListener(_onPeersChanged);
     _idController.dispose();
     _passwordController.dispose();
@@ -43,6 +48,15 @@ class _ConnectScreenState extends State<ConnectScreen> {
       final ids = gFFI.recentPeersModel.peers.map((p) => p.id).toList();
       if (ids.isNotEmpty) bind.queryOnlines(ids: ids);
     }
+  }
+
+  void _startOnlineCheck() {
+    _onlineCheckTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      final ids = gFFI.recentPeersModel.peers.take(5).map((p) => p.id).toList();
+      if (ids.isNotEmpty) {
+        bind.queryOnlines(ids: ids);
+      }
+    });
   }
 
   void _onConnect([String? peerId]) async {
