@@ -82,60 +82,63 @@ class _ConnectScreenState extends State<ConnectScreen> {
     return Scaffold(
       backgroundColor: AppTokens.colorBgBase,
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTokens.spaceXl,
-            vertical: AppTokens.spaceXl,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: AppTokens.spaceXl),
-              loadIcon(72),
-              const SizedBox(height: AppTokens.spaceLg),
-              Text(
-                'Tabby',
-                textAlign: TextAlign.center,
-                style: AppTokens.fontTitle
-                    .copyWith(color: AppTokens.colorTextHigh),
-              ),
-              const SizedBox(height: 40),
-              _PeerIdField(
-                controller: _idController,
-                onSubmitted: (_) => _onConnect(),
-              ),
-              const SizedBox(height: AppTokens.spaceSm),
-              _PasswordField(
-                controller: _passwordController,
-                obscure: _obscurePassword,
-                onToggleObscure: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                onSubmitted: (_) => _onConnect(),
-              ),
-              const SizedBox(height: AppTokens.spaceLg),
-              FilledButton(
-                onPressed: _onConnect,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTokens.colorPrimary,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: AppTokens.spaceMd),
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppTokens.radiusCard),
-                  ),
-                ),
-                child: Text(
-                  'Connect',
-                  style: AppTokens.fontKey
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.spaceXl,
+              vertical: AppTokens.spaceXl,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppTokens.spaceXl),
+                loadIcon(72),
+                const SizedBox(height: AppTokens.spaceLg),
+                Text(
+                  'Tabby',
+                  textAlign: TextAlign.center,
+                  style: AppTokens.fontTitle
                       .copyWith(color: AppTokens.colorTextHigh),
                 ),
-              ),
-              const SizedBox(height: AppTokens.spaceSm),
-              _EditServerIdButton(),
-              const SizedBox(height: AppTokens.spaceXl),
-              _RecentPeers(onConnect: _onConnect),
-            ],
+                const SizedBox(height: 40),
+                _PeerIdField(
+                  controller: _idController,
+                  onSubmitted: (_) => _onConnect(),
+                ),
+                const SizedBox(height: AppTokens.spaceSm),
+                _PasswordField(
+                  controller: _passwordController,
+                  obscure: _obscurePassword,
+                  onToggleObscure: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  onSubmitted: (_) => _onConnect(),
+                ),
+                const SizedBox(height: AppTokens.spaceLg),
+                FilledButton(
+                  onPressed: _onConnect,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTokens.colorPrimary,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: AppTokens.spaceMd),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppTokens.radiusCard),
+                    ),
+                  ),
+                  child: Text(
+                    'Connect',
+                    style: AppTokens.fontKey
+                        .copyWith(color: AppTokens.colorTextHigh),
+                  ),
+                ),
+                const SizedBox(height: AppTokens.spaceSm),
+                _EditServerIdButton(),
+                const SizedBox(height: AppTokens.spaceXl),
+                _RecentPeers(onConnect: _onConnect),
+              ],
+            ),
           ),
         ),
       ),
