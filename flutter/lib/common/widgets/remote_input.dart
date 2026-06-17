@@ -599,9 +599,7 @@ class _RawTouchGestureDetectorRegionState
       // Official
       TapGestureRecognizer:
           GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
-              () => TapGestureRecognizer(
-                    supportedDevices: kTouchBasedDeviceKinds,
-                  ), (instance) {
+              () => TapGestureRecognizer(), (instance) {
         instance
           ..onTapDown = onTapDown
           ..onTapUp = onTapUp
@@ -609,18 +607,14 @@ class _RawTouchGestureDetectorRegionState
       }),
       DoubleTapGestureRecognizer:
           GestureRecognizerFactoryWithHandlers<DoubleTapGestureRecognizer>(
-              () => DoubleTapGestureRecognizer(
-                    supportedDevices: kTouchBasedDeviceKinds,
-                  ), (instance) {
+              () => DoubleTapGestureRecognizer(), (instance) {
         instance
           ..onDoubleTapDown = onDoubleTapDown
           ..onDoubleTap = onDoubleTap;
       }),
       LongPressGestureRecognizer:
           GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
-              () => LongPressGestureRecognizer(
-                    supportedDevices: kTouchBasedDeviceKinds,
-                  ), (instance) {
+              () => LongPressGestureRecognizer(), (instance) {
         instance
           ..onLongPressDown = onLongPressDown
           ..onLongPressUp = onLongPressUp
@@ -630,9 +624,7 @@ class _RawTouchGestureDetectorRegionState
       // Customized
       HoldTapMoveGestureRecognizer:
           GestureRecognizerFactoryWithHandlers<HoldTapMoveGestureRecognizer>(
-              () => HoldTapMoveGestureRecognizer(
-                    supportedDevices: kTouchBasedDeviceKinds,
-                  ),
+              () => HoldTapMoveGestureRecognizer(),
               (instance) => instance
                 ..onHoldDragStart = onHoldDragStart
                 ..onHoldDragUpdate = onHoldDragUpdate
@@ -640,18 +632,14 @@ class _RawTouchGestureDetectorRegionState
                 ..onHoldDragEnd = onHoldDragEnd),
       DoubleFinerTapGestureRecognizer:
           GestureRecognizerFactoryWithHandlers<DoubleFinerTapGestureRecognizer>(
-              () => DoubleFinerTapGestureRecognizer(
-                    supportedDevices: kTouchBasedDeviceKinds,
-                  ), (instance) {
+              () => DoubleFinerTapGestureRecognizer(), (instance) {
         instance
           ..onDoubleFinerTap = onDoubleFinerTap
           ..onDoubleFinerTapDown = onDoubleFinerTapDown;
       }),
       CustomTouchGestureRecognizer:
           GestureRecognizerFactoryWithHandlers<CustomTouchGestureRecognizer>(
-              () => CustomTouchGestureRecognizer(
-                    supportedDevices: kTouchBasedDeviceKinds,
-                  ), (instance) {
+              () => CustomTouchGestureRecognizer(), (instance) {
         instance.onOneFingerPanStart =
             (DragStartDetails d) => onOneFingerPanStart(context, d);
         instance
