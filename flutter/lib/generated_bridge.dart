@@ -628,6 +628,11 @@ abstract class Rustdesk {
 
   FlutterRustBridgeTaskConstMeta get kMainChangeIdConstMeta;
 
+  Future<String> mainDeployDevice(
+      {required String token, required String id, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kMainDeployDeviceConstMeta;
+
   Future<String> mainGetAsyncStatus({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kMainGetAsyncStatusConstMeta;
@@ -3947,6 +3952,26 @@ class RustdeskImpl implements Rustdesk {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "main_change_id",
         argNames: ["newId"],
+      );
+
+  Future<String> mainDeployDevice(
+      {required String token, required String id, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(token);
+    var arg1 = _platform.api2wire_String(id);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_main_deploy_device(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
+      constMeta: kMainDeployDeviceConstMeta,
+      argValues: [token, id],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kMainDeployDeviceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "main_deploy_device",
+        argNames: ["token", "id"],
       );
 
   Future<String> mainGetAsyncStatus({dynamic hint}) {
@@ -10496,6 +10521,28 @@ class RustdeskWire implements FlutterRustBridgeWireBase {
               ffi.Pointer<wire_uint_8_list>)>>('wire_main_change_id');
   late final _wire_main_change_id = _wire_main_change_idPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_main_deploy_device(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> token,
+    ffi.Pointer<wire_uint_8_list> id,
+  ) {
+    return _wire_main_deploy_device(
+      port_,
+      token,
+      id,
+    );
+  }
+
+  late final _wire_main_deploy_devicePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_main_deploy_device');
+  late final _wire_main_deploy_device = _wire_main_deploy_devicePtr.asFunction<
+      void Function(int, ffi.Pointer<wire_uint_8_list>,
+          ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_main_get_async_status(
     int port_,
