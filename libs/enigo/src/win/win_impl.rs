@@ -473,6 +473,16 @@ impl Enigo {
         let current_window_thread_id =
             unsafe { GetWindowThreadProcessId(GetForegroundWindow(), std::ptr::null_mut()) };
         unsafe { LAYOUT = GetKeyboardLayout(current_window_thread_id) };
-        unsafe { VkKeyScanExW(chr as _, LAYOUT) as _ }
+        let code: u16 = unsafe { VkKeyScanExW(chr as _, LAYOUT) as _ };
+        // Non-Latin layouts (e.g. Russian, Hebrew) cannot produce Latin letters,
+        // so VkKeyScanExW returns -1 and the caller gives up on the key. For
+        // ASCII alphanumerics the virtual-key code equals the uppercase ASCII
+        // value on every layout, so fall back to it instead of failing. Keeps
+        // hotkeys like Ctrl+V working when the focused window is on such a
+        // layout, without disturbing layouts where the lookup succeeds.
+        if code == 0xFFFF && chr.is_ascii_alphanumeric() {
+            return chr.to_ascii_uppercase() as u16;
+        }
+        code
     }
 }
