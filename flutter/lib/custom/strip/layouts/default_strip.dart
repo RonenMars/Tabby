@@ -16,7 +16,7 @@ StripLayout stripLayoutForPlatform(String platform) {
 
   return StripLayout(
     rows: [
-      // Row 1: disconnect + ⇧ + Ctrl + ⏎ + Esc + Cmd + Win + Alt (left)  |  ▲▼ + Y + ⌨ (right)
+      // Row 1: disconnect + ⇧ + Ctrl + ⏎ + Esc + platform modifier + Win (non-macOS) + Alt (left)  |  ▲▼ + Y + ⌨ (right)
       StripRow(
         left: [
           KeyDef(label: '✕', keyName: '', type: KeyType.disconnect, widthFactor: 0.7),
@@ -25,7 +25,8 @@ StripLayout stripLayoutForPlatform(String platform) {
           KeyDef(label: '⏎', keyName: 'return', type: KeyType.regular),
           KeyDef(label: 'Esc', keyName: 'escape', type: KeyType.regular),
           cmdDef,
-          KeyDef(label: 'Win', keyName: 'win', type: KeyType.regular),
+          if (platform != kPeerPlatformMacOS)
+            KeyDef(label: 'Win', keyName: 'win', type: KeyType.regular),
           altDef,
         ],
         right: [
