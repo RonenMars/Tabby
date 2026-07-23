@@ -1733,6 +1733,14 @@ abstract class Rustdesk {
 
   FlutterRustBridgeTaskConstMeta get kMainSetCommonConstMeta;
 
+  Future<void> sessionSetCommon(
+      {required UuidValue sessionId,
+      required String key,
+      required String value,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kSessionSetCommonConstMeta;
+
   String? sessionGetCommonSync(
       {required UuidValue sessionId,
       required String key,
@@ -8063,6 +8071,30 @@ class RustdeskImpl implements Rustdesk {
         argNames: ["key", "value"],
       );
 
+  Future<void> sessionSetCommon(
+      {required UuidValue sessionId,
+      required String key,
+      required String value,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_Uuid(sessionId);
+    var arg1 = _platform.api2wire_String(key);
+    var arg2 = _platform.api2wire_String(value);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_session_set_common(port_, arg0, arg1, arg2),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kSessionSetCommonConstMeta,
+      argValues: [sessionId, key, value],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kSessionSetCommonConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "session_set_common",
+        argNames: ["sessionId", "key", "value"],
+      );
+
   String? sessionGetCommonSync(
       {required UuidValue sessionId,
       required String key,
@@ -14169,6 +14201,31 @@ class RustdeskWire implements FlutterRustBridgeWireBase {
   late final _wire_main_set_common = _wire_main_set_commonPtr.asFunction<
       void Function(
           int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_session_set_common(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> session_id,
+    ffi.Pointer<wire_uint_8_list> key,
+    ffi.Pointer<wire_uint_8_list> value,
+  ) {
+    return _wire_session_set_common(
+      port_,
+      session_id,
+      key,
+      value,
+    );
+  }
+
+  late final _wire_session_set_commonPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_session_set_common');
+  late final _wire_session_set_common = _wire_session_set_commonPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_uint_8_list>,
+          ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_uint_8_list>)>();
 
   WireSyncReturn wire_session_get_common_sync(
     ffi.Pointer<wire_uint_8_list> session_id,
