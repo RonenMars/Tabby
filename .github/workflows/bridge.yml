@@ -91,6 +91,7 @@ jobs:
           if [[ "${{ matrix.job.flutter-version }}" == "3.22.3" ]]; then
             # Default Flutter 3.22.3: extended_text 15 needs a newer Dart, so downgrade for resolution.
             sed -i -e 's/extended_text: \^15.0.0/extended_text: 13.0.0/g' flutter/pubspec.yaml
+            sed -i -e 's/google_fonts: \^7.0.0/google_fonts: ^6.2.1/g' flutter/pubspec.yaml
           else
             # Flutter 3.44 bridge for Windows arm64: match that build's source/pubspec state so the
             # generated *.freezed.dart compiles against the same Flutter/freezed it resolves.
