@@ -39,8 +39,8 @@ else
   log "submodules already initialized"
 fi
 
-# ── 2. Flutter SDK + patch ───────────────────────────────────────────────────
-log "Step 2/8 — Flutter SDK (fvm) + dropdown_menu patch"
+# ── 2. Flutter SDK ───────────────────────────────────────────────────────────
+log "Step 2/8 — Flutter SDK (fvm)"
 command -v fvm >/dev/null || die "fvm not installed (brew install fvm)"
 [ -f .fvmrc ] || die ".fvmrc missing — cannot determine pinned Flutter version"
 FLUTTER_VERSION="${FLUTTER_VERSION:-$(grep -oE '"flutter"[[:space:]]*:[[:space:]]*"[^"]*"' .fvmrc | sed -E 's/.*"([^"]+)"$/\1/')}"
@@ -48,24 +48,6 @@ FLUTTER_VERSION="${FLUTTER_VERSION:-$(grep -oE '"flutter"[[:space:]]*:[[:space:]
 
 if [ ! -d "$HOME/fvm/versions/$FLUTTER_VERSION" ]; then
   fvm install "$FLUTTER_VERSION"
-fi
-
-PATCH_PATH="$REPO_ROOT/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff"
-PATCHED_MARKER="$HOME/fvm/versions/$FLUTTER_VERSION/.tabby-patched"
-if [ -f "$PATCH_PATH" ] && [ ! -f "$PATCHED_MARKER" ]; then
-  if ( cd "$HOME/fvm/versions/$FLUTTER_VERSION" && git apply --check "$PATCH_PATH" ) 2>/dev/null; then
-    log "applying Flutter dropdown_menu patch to $FLUTTER_VERSION"
-    ( cd "$HOME/fvm/versions/$FLUTTER_VERSION" \
-      && git apply "$PATCH_PATH" \
-      && touch "$PATCHED_MARKER" )
-  elif ( cd "$HOME/fvm/versions/$FLUTTER_VERSION" && git apply --reverse --check "$PATCH_PATH" ) 2>/dev/null; then
-    log "Flutter patch already applied; recording marker"
-    touch "$PATCHED_MARKER"
-  else
-    die "Flutter patch neither applies nor is already applied — Flutter SDK at $HOME/fvm/versions/$FLUTTER_VERSION may have unexpected state"
-  fi
-else
-  log "Flutter patch already applied (marker present)"
 fi
 
 # ── 3. vcpkg manifest install + symlinks ─────────────────────────────────────

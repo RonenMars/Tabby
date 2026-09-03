@@ -23,7 +23,7 @@
 # Start of functions
 
 # Install Flutter of version `VERSION` from Github repository
-# into directory `FLUTTER_DIR` and apply patches if needed
+# into directory `FLUTTER_DIR`.
 
 prepare_flutter() {
 	VERSION="${1}"
@@ -37,12 +37,6 @@ prepare_flutter() {
 
 	git restore .
 	git checkout "${VERSION}"
-
-	# Patch flutter
-
-	if dpkg --compare-versions "${VERSION}" ge "3.24.4"; then
-		git apply "${ROOTDIR}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff"
-	fi
 
 	flutter config --no-analytics
 
