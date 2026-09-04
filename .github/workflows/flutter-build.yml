@@ -1055,6 +1055,10 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
         run: |
           export PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH
+          pushd flutter
+          flutter pub get
+          popd
+          bash .github/patches/patch_legacy_android_plugins.sh
           # Increase Gradle JVM memory for CI builds
           sed -i "s/org.gradle.jvmargs=-Xmx1024M/org.gradle.jvmargs=-Xmx2g/g" ./flutter/android/gradle.properties
           # temporary use debug sign config
@@ -1457,7 +1461,11 @@ jobs:
           githubToken: ${{ github.token }}
           setup: |
             ls -l "${PWD}"
-            ls -l /opt/artifacts/vcpkg/installed
+            if [ -d /opt/artifacts/vcpkg/installed ]; then
+              ls -l /opt/artifacts/vcpkg/installed
+            else
+              echo "No prebuilt vcpkg artifacts were provided"
+            fi
           dockerRunArgs: |
             --volume "${PWD}:/workspace"
             --volume "/opt/artifacts:/opt/artifacts"
@@ -1502,7 +1510,11 @@ jobs:
             apt-get remove -y libopus-dev || true
             # output devs
             ls -l ./
-            tree -L 3 /opt/artifacts/vcpkg/installed
+            if [ -d /opt/artifacts/vcpkg/installed ]; then
+              tree -L 3 /opt/artifacts/vcpkg/installed
+            else
+              echo "No prebuilt vcpkg artifacts were provided"
+            fi
           run: |
             # disable git safe.directory
             git config --global --add safe.directory "*"

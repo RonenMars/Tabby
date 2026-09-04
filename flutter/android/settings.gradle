@@ -23,3 +23,19 @@ plugins {
 }
 
 include ":app"
+
+// Keep legacy Flutter plugins buildable with AGP 8+, which requires an explicit
+// namespace even when the plugin still declares its package in AndroidManifest.xml.
+gradle.beforeProject { project ->
+    project.plugins.withId("com.android.library") {
+        if (project.android.namespace == null) {
+            def manifest = project.file("src/main/AndroidManifest.xml")
+            if (manifest.exists()) {
+                def packageName = new XmlSlurper().parse(manifest).@package.text()
+                if (packageName) {
+                    project.android.namespace = packageName
+                }
+            }
+        }
+    }
+}
