@@ -1822,22 +1822,34 @@ pub fn main_remove_peer(id: String) {
 }
 
 pub fn main_import_rustdesk_data(folder: String) -> String {
-    use hbb_common::config::import_rustdesk_server_config;
-
     let folder_path = std::path::PathBuf::from(&folder);
 
     let config2_path = folder_path.join("RustDesk2.toml");
-    let (id_server, relay_server, api_server, key) = if config2_path.exists() {
-        import_rustdesk_server_config(&config2_path)
-    } else {
-        Default::default()
-    };
-    let server_config = serde_json::json!({
-        "id_server": id_server,
-        "relay_server": relay_server,
-        "api_server": api_server,
-        "key": key,
-    });
+    let server_config = std::fs::read_to_string(&config2_path)
+        .ok()
+        .and_then(|contents| contents.parse::<toml::Value>().ok())
+        .map(|config| {
+            let get = |name: &str| {
+                config
+                    .get(name)
+                    .and_then(toml::Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned()
+            };
+            let id_server = get("id_server");
+            serde_json::json!({
+                "id_server": if id_server.is_empty() { get("rendezvous_server") } else { id_server },
+                "relay_server": get("relay_server"),
+                "api_server": get("api_server"),
+                "key": get("key"),
+            })
+        })
+        .unwrap_or_else(|| serde_json::json!({
+            "id_server": "",
+            "relay_server": "",
+            "api_server": "",
+            "key": "",
+        }));
 
     let peers_dir = folder_path.join("peers");
     let mut peers: Vec<serde_json::Value> = Vec::new();
@@ -1847,13 +1859,16 @@ pub fn main_import_rustdesk_data(folder: String) -> String {
             if path.extension().and_then(|e| e.to_str()) != Some("toml") {
                 continue;
             }
-            if let Some((id, config)) = PeerConfig::load_from_path(&path) {
-                peers.push(serde_json::json!({
-                    "id": id,
-                    "username": config.info.username,
-                    "hostname": config.info.hostname,
-                    "platform": config.info.platform,
-                }));
+            let id = path.file_stem().and_then(|name| name.to_str()).unwrap_or_default();
+            if let Ok(contents) = std::fs::read_to_string(&path) {
+                if let Ok(config) = toml::from_str::<PeerConfig>(&contents) {
+                    peers.push(serde_json::json!({
+                        "id": id,
+                        "username": config.info.username,
+                        "hostname": config.info.hostname,
+                        "platform": config.info.platform,
+                    }));
+                }
             }
         }
     }

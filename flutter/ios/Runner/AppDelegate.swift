@@ -1,5 +1,6 @@
 import UIKit
 import Flutter
+import AVFAudio
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -7,6 +8,11 @@ import Flutter
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    do {
+      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+    } catch {
+      NSLog("Unable to configure Tabby audio session: %@", error.localizedDescription)
+    }
     GeneratedPluginRegistrant.register(with: self)
     dummyMethodToEnforceBundling();
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

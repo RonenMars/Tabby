@@ -7361,6 +7361,7 @@ dependencies = [
  "terminfo",
  "termios 0.3.3",
  "tiny-skia",
+ "toml 0.5.11",
  "totp-rs",
  "tray-icon",
  "ttf-parser",
