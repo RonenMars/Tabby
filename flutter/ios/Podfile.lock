@@ -32,34 +32,29 @@ PODS:
   - DKPhotoGallery/Resource (0.0.17):
     - SDWebImage
     - SwiftyGif
+  - external_path (2.0.1):
+    - Flutter
   - file_picker (0.0.1):
     - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
   - flutter_keyboard_visibility (0.0.1):
     - Flutter
-  - FMDB (2.7.12):
-    - FMDB/standard (= 2.7.12)
-  - FMDB/Core (2.7.12)
-  - FMDB/standard (2.7.12):
-    - FMDB/Core
   - image_picker_ios (0.0.1):
     - Flutter
-  - MTBBarcodeScanner (5.0.11)
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - qr_code_scanner (0.2.0):
+  - qr_code_scanner_plus (0.2.6):
     - Flutter
-    - MTBBarcodeScanner
   - SDWebImage (5.18.11):
     - SDWebImage/Core (= 5.18.11)
   - SDWebImage/Core (5.18.11)
-  - sqflite (0.0.2):
+  - sqflite_darwin (0.0.4):
     - Flutter
-    - FMDB (>= 2.7.5)
+    - FlutterMacOS
   - SwiftyGif (5.4.4)
   - uni_links (0.0.1):
     - Flutter
@@ -73,14 +68,15 @@ PODS:
 
 DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
+  - external_path (from `.symlinks/plugins/external_path/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
-  - qr_code_scanner (from `.symlinks/plugins/qr_code_scanner/ios`)
-  - sqflite (from `.symlinks/plugins/sqflite/ios`)
+  - qr_code_scanner_plus (from `.symlinks/plugins/qr_code_scanner_plus/ios`)
+  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - uni_links (from `.symlinks/plugins/uni_links/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
@@ -90,14 +86,14 @@ SPEC REPOS:
   trunk:
     - DKImagePickerController
     - DKPhotoGallery
-    - FMDB
-    - MTBBarcodeScanner
     - SDWebImage
     - SwiftyGif
 
 EXTERNAL SOURCES:
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
+  external_path:
+    :path: ".symlinks/plugins/external_path/ios"
   file_picker:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
@@ -110,10 +106,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
-  qr_code_scanner:
-    :path: ".symlinks/plugins/qr_code_scanner/ios"
-  sqflite:
-    :path: ".symlinks/plugins/sqflite/ios"
+  qr_code_scanner_plus:
+    :path: ".symlinks/plugins/qr_code_scanner_plus/ios"
+  sqflite_darwin:
+    :path: ".symlinks/plugins/sqflite_darwin/darwin"
   uni_links:
     :path: ".symlinks/plugins/uni_links/ios"
   url_launcher_ios:
@@ -127,17 +123,16 @@ SPEC CHECKSUMS:
   device_info_plus: 335f3ce08d2e174b9fdc3db3db0f4e3b1f66bd89
   DKImagePickerController: b512c28220a2b8ac7419f21c491fc8534b7601ac
   DKPhotoGallery: fdfad5125a9fdda9cc57df834d49df790dbb4179
+  external_path: fd37c654b69a1336e33a2403f48383ae6100e443
   file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_keyboard_visibility: 4625131e43015dbbe759d9b20daaf77e0e3f6619
-  FMDB: 728731dd336af3936ce00f91d9d8495f5718a0e6
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
-  MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
   package_info_plus: 566e1b7a2f3900e4b0020914ad3fc051dcc95596
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
-  qr_code_scanner: d77f94ecc9abf96d9b9b8fc04ef13f611e5a147a
+  qr_code_scanner_plus: 1fb59fd4576edb53ec7560c3746f454dee54300c
   SDWebImage: a3ba0b8faac7228c3c8eadd1a55c9c9fe5e16457
-  sqflite: 954affaf2567c73cda074440299a625e3b2cbf8a
+  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   SwiftyGif: 93a1cc87bf3a51916001cf8f3d63835fb64c819f
   uni_links: ed8c961e47ed9ce42b6d91e1de8049e38a4b3152
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
@@ -146,4 +141,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 83d1b0fb6fc8613d8312a03b8e1540d37cfc5d2c
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.17.0
