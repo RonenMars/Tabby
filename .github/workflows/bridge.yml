@@ -12,6 +12,7 @@ env:
 
 jobs:
   generate_bridge:
+    name: generate_bridge (x86_64-unknown-linux-gnu, ubuntu-22.04)
     runs-on: ${{ matrix.job.os }}
     strategy:
       fail-fast: false
