@@ -14,6 +14,7 @@ import '../chat/terminal_chat_overlay.dart' show TerminalChatPartialBar, Termina
 import '../theme/tokens.dart';
 import '../input/input_bridge.dart';
 import '../input/text_field_bridge.dart';
+import '../input/keyboard_telemetry.dart';
 import '../overlay/floating_macro_bar.dart';
 import '../strip/models/modifier_state.dart';
 import '../strip/widgets/power_strip.dart';
@@ -106,17 +107,17 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
   }
 
   void _logKeyboardFocus() {
-    debugPrint('[TabbyKeyboard] focus=${_kbFocusNode.hasFocus} primary=${_kbFocusNode.hasPrimaryFocus} generation=$_keyboardGeneration');
+    KeyboardTelemetry.event('focus_changed', data: {'focused': _kbFocusNode.hasFocus, 'primary': _kbFocusNode.hasPrimaryFocus, 'generation': _keyboardGeneration});
   }
 
   void _resetKeyboardInput() {
-    debugPrint('[TabbyKeyboard] reset requested generation=$_keyboardGeneration focus=${_kbFocusNode.hasFocus}');
+    KeyboardTelemetry.event('reset_requested', data: {'generation': _keyboardGeneration, 'focused': _kbFocusNode.hasFocus});
     _kbFocusNode.unfocus();
     setState(() => _keyboardGeneration++);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _kbFocusNode.requestFocus();
-      debugPrint('[TabbyKeyboard] focus requested generation=$_keyboardGeneration');
+      KeyboardTelemetry.event('focus_requested', data: {'generation': _keyboardGeneration});
     });
   }
 
