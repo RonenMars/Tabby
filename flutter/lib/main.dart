@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/widgets/overlay.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
@@ -52,7 +53,29 @@ Future<void> main(List<String> args) async {
   kBootArgs = List.from(args);
 
   if (!isDesktop) {
-    runMobileApp();
+    final dsn = const String.fromEnvironment('SENTRY_DSN');
+    if (dsn.isNotEmpty) {
+      await SentryFlutter.init(
+        (options) {
+          options.dsn = dsn;
+          options.environment = const String.fromEnvironment('SENTRY_ENVIRONMENT', defaultValue: 'qa');
+          options.sendDefaultPii = false;
+          options.attachScreenshot = false;
+          options.attachViewHierarchy = false;
+          options.enableAutoSessionTracking = false;
+          options.tracesSampleRate = 0;
+          options.beforeSend = (event, hint) {
+            // Remote desktop content may contain secrets. Only explicit
+            // Tabby keyboard diagnostics are sent, never arbitrary crashes.
+            if (event.logger != 'tabby.keyboard') return null;
+            return event;
+          };
+        },
+        appRunner: () => runMobileApp(),
+      );
+    } else {
+      runMobileApp();
+    }
     return;
   }
   // main window
