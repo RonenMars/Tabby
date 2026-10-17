@@ -7,13 +7,12 @@ class KeyboardTelemetry {
   static void event(String action, {Map<String, Object>? data}) {
     debugPrint('[TabbyKeyboard] $action ${data ?? const {}}');
     if (!Sentry.isEnabled) return;
-    Sentry.captureMessage(
-      'keyboard.$action',
-      level: SentryLevel.info,
-      withScope: (scope) {
-        scope.setTag('logger', 'tabby.keyboard');
-        scope.setContexts('keyboard', data ?? const <String, Object>{});
-      },
+    Sentry.captureEvent(
+      SentryEvent(
+        logger: 'tabby.keyboard',
+        level: SentryLevel.info,
+        message: SentryMessage('keyboard.$action'),
+      ),
     );
   }
 
