@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'input_bridge.dart';
+import 'keyboard_telemetry.dart';
 import '../strip/models/modifier_state.dart';
 
 // Pre-filled buffer of '1' characters — same trick as upstream RustDesk's
@@ -51,7 +52,7 @@ class _TextFieldBridgeState extends State<TextFieldBridge> {
   // the trailing space iOS appends after word completion.
   void _onChanged(String newValue) {
     _changeCount++;
-    debugPrint('[TabbyKeyboard] onChanged #$_changeCount length=${newValue.length} composing=${_controller.value.composing.isValid}');
+    KeyboardTelemetry.event('changed', data: {'count': _changeCount, 'length': newValue.length, 'composing': _controller.value.composing.isValid});
     final oldValue = _value;
     _value = newValue;
 
@@ -80,7 +81,7 @@ class _TextFieldBridgeState extends State<TextFieldBridge> {
       final composingLength = _controller.value.composing.end -
           _controller.value.composing.start;
       if (composingLength > newStr.length) {
-        debugPrint('[TabbyKeyboard] composing delta skipped #$_changeCount');
+        KeyboardTelemetry.event('composition_skipped', data: {'count': _changeCount});
         _value = oldValue;
         return;
       }
@@ -89,7 +90,7 @@ class _TextFieldBridgeState extends State<TextFieldBridge> {
     // Send backspaces for deleted chars.
     for (var k = 0; k < subOld.length - common; ++k) {
       _dispatchCount++;
-      debugPrint('[TabbyKeyboard] dispatch #$_dispatchCount backspace');
+      KeyboardTelemetry.event('dispatch_backspace', data: {'count': _dispatchCount});
       widget.inputBridge.tapKey('backspace');
     }
 
@@ -101,7 +102,7 @@ class _TextFieldBridgeState extends State<TextFieldBridge> {
     // iOS multiline keyboard delivers Return as a '\n' via onChanged.
     if (newStr == '\n') {
       _dispatchCount++;
-      debugPrint('[TabbyKeyboard] dispatch #$_dispatchCount return');
+      KeyboardTelemetry.event('dispatch_return', data: {'count': _dispatchCount});
       widget.inputBridge.tapKey('return', modifiers: mods);
       if (mods.isNotEmpty) widget.modifierController.releaseOneShot();
       _resetBuffer();
@@ -110,14 +111,16 @@ class _TextFieldBridgeState extends State<TextFieldBridge> {
 
     if (mods.isNotEmpty && newStr.length == 1) {
       _dispatchCount++;
-      debugPrint('[TabbyKeyboard] dispatch #$_dispatchCount modified key');
+      KeyboardTelemetry.event('dispatch_modified', data: {'count': _dispatchCount});
       widget.inputBridge.tapKey(newStr.toLowerCase(), modifiers: mods);
       widget.modifierController.releaseOneShot();
     } else if (newStr.length > 1) {
       _dispatchCount++;
-      debugPrint('[TabbyKeyboard] dispatch #$_dispatchCount text length=${newStr.length}');
+      KeyboardTelemetry.event('dispatch_text', data: {'count': _dispatchCount, 'length': newStr.length});
       widget.inputBridge.typeString(newStr);
     } else {
+      _dispatchCount++;
+      KeyboardTelemetry.event('dispatch_text', data: {'count': _dispatchCount, 'length': newStr.length});
       widget.inputBridge.typeString(newStr);
     }
   }
@@ -147,7 +150,7 @@ class _TextFieldBridgeState extends State<TextFieldBridge> {
           onChanged: _onChanged,
           onSubmitted: (_) {
             _dispatchCount++;
-            debugPrint('[TabbyKeyboard] onSubmitted dispatch #$_dispatchCount return');
+            KeyboardTelemetry.event('submitted', data: {'count': _dispatchCount});
             widget.inputBridge.tapKey('return');
             _resetBuffer();
             widget.focusNode.requestFocus();
