@@ -622,7 +622,8 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                       icon: Icon(Icons.tv),
                       onPressed: () {
                         setState(() => _showEdit = false);
-                        showOptions(context, widget.id, _ffi.dialogManager);
+                        showOptions(context, widget.id, _ffi.dialogManager,
+                            sessionFfi: _ffi);
                       },
                     )
                   ] +
@@ -1264,10 +1265,13 @@ class CursorPaint extends StatelessWidget {
 }
 
 void showOptions(
-    BuildContext context, String id, OverlayDialogManager dialogManager) async {
+    BuildContext context, String id, OverlayDialogManager dialogManager,
+    {FFI? sessionFfi}) async {
+  // Tabby sessions use their own FFI, not gFFI; default keeps upstream behaviour.
+  final ffi = sessionFfi ?? gFFI;
   var displays = <Widget>[];
-  final pi = gFFI.ffiModel.pi;
-  final image = gFFI.ffiModel.getConnectionImageText();
+  final pi = ffi.ffiModel.pi;
+  final image = ffi.ffiModel.getConnectionImageText();
   if (image != null) {
     displays.add(Padding(padding: const EdgeInsets.only(top: 8), child: image));
   }
@@ -1290,8 +1294,8 @@ void showOptions(
       children.add(InkWell(
           onTap: () {
             if (i == cur) return;
-            openMonitorInTheSameTab(i, gFFI, pi, updateCursorPos: true);
-            gFFI.dialogManager.dismissAll();
+            openMonitorInTheSameTab(i, ffi, pi, updateCursorPos: true);
+            ffi.dialogManager.dismissAll();
           },
           child: Ink(
               width: 40,
@@ -1320,18 +1324,18 @@ void showOptions(
   }
 
   List<TRadioMenu<String>> viewStyleRadios =
-      await toolbarViewStyle(context, id, gFFI);
+      await toolbarViewStyle(context, id, ffi);
   List<TRadioMenu<String>> imageQualityRadios =
-      await toolbarImageQuality(context, id, gFFI);
-  List<TRadioMenu<String>> codecRadios = await toolbarCodec(context, id, gFFI);
-  List<TToggleMenu> cursorToggles = await toolbarCursor(context, id, gFFI);
+      await toolbarImageQuality(context, id, ffi);
+  List<TRadioMenu<String>> codecRadios = await toolbarCodec(context, id, ffi);
+  List<TToggleMenu> cursorToggles = await toolbarCursor(context, id, ffi);
   List<TToggleMenu> displayToggles =
-      await toolbarDisplayToggle(context, id, gFFI);
+      await toolbarDisplayToggle(context, id, ffi);
 
   List<TToggleMenu> privacyModeList = [];
-  if ((gFFI.ffiModel.pi.features.privacyMode && gFFI.ffiModel.keyboard) ||
+  if ((ffi.ffiModel.pi.features.privacyMode && ffi.ffiModel.keyboard) ||
       privacyModeState.isNotEmpty) {
-    privacyModeList = toolbarPrivacyMode(privacyModeState, context, id, gFFI);
+    privacyModeList = toolbarPrivacyMode(privacyModeState, context, id, ffi);
     if (privacyModeList.length == 1) {
       displayToggles.add(privacyModeList[0]);
     }
@@ -1358,7 +1362,7 @@ void showOptions(
                 : null)),
       // Show custom scale controls when custom view style is selected
       Obx(() => viewStyle.value == kRemoteViewStyleCustom
-          ? MobileCustomScaleControls(ffi: gFFI)
+          ? MobileCustomScaleControls(ffi: ffi)
           : const SizedBox.shrink()),
       const Divider(color: MyTheme.border),
       for (var e in imageQualityRadios)
@@ -1437,7 +1441,7 @@ void showOptions(
     }
 
     var popupDialogMenus = List<Widget>.empty(growable: true);
-    final resolution = getResolutionMenu(gFFI, id);
+    final resolution = getResolutionMenu(ffi, id);
     if (resolution != null) {
       popupDialogMenus.add(ListTile(
         contentPadding: EdgeInsets.zero,
@@ -1449,7 +1453,7 @@ void showOptions(
         },
       ));
     }
-    final virtualDisplayMenu = getVirtualDisplayMenu(gFFI, id);
+    final virtualDisplayMenu = getVirtualDisplayMenu(ffi, id);
     if (virtualDisplayMenu != null) {
       popupDialogMenus.add(ListTile(
         contentPadding: EdgeInsets.zero,
