@@ -52,6 +52,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
   void _startOnlineCheck() {
     _onlineCheckTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      // Skip while a remote session is pushed on top or the app is not in
+      // the foreground; each query opens a new rendezvous connection.
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+        return;
+      }
       final ids = gFFI.recentPeersModel.peers.take(5).map((p) => p.id).toList();
       if (ids.isNotEmpty) {
         bind.queryOnlines(ids: ids);
