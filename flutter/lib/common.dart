@@ -1221,7 +1221,14 @@ void msgBox(SessionID sessionId, String type, String title, String text,
       closeConnection();
     }
 
+    var remember = false;
+
     void continueSession() {
+      // Per-peer option, only ever stored on Continue (never on Disconnect).
+      if (remember) {
+        unawaited(bind.sessionPeerOption(
+            sessionId: sessionId, name: 'trust-insecure', value: 'Y'));
+      }
       unawaited(
         bind.sessionSetCommon(
           sessionId: sessionId,
@@ -1235,7 +1242,20 @@ void msgBox(SessionID sessionId, String type, String title, String text,
     dialogManager.show(
       (setState, close, context) => CustomAlertDialog(
         title: null,
-        content: SelectionArea(child: msgboxContent(type, title, text)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SelectionArea(child: msgboxContent(type, title, text)),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: remember,
+              onChanged: (v) => setState(() => remember = v ?? false),
+              title: Text(translate('remember-insecure-connection-tip')),
+            ),
+          ],
+        ),
         actions: [
           dialogButton(
             'Continue',

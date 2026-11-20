@@ -278,7 +278,9 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("wayland-keyboard-input-applies-to-tip", "This choice applies to:"),
         ("wayland-soft-keyboard-input-label", "Soft keyboard input"),
         ("wayland-keyboard-input-reset-choice-tip", "Reset keyboard input choice"),
-        ("remember-wayland-keyboard-choice-tip", "Don't ask again for this remote computer"),
+        ("remember-insecure-connection-tip", "Don't ask again for this remote computer"),
+        ("reset-insecure-connection-choices", "Reset remembered insecure connection choices"),
+        ("remember-wayland-keyboard-choice-tip","Don't ask again for this remote computer"),
         ("conn-e2ee-unavailable-tip", "Could not verify end-to-end encryption.\nThe remote device may still be setting up. Try again later.\nIf this keeps happening, the server may be untrusted.\nContinue anyway?")
     ].iter().cloned().collect();
 }
