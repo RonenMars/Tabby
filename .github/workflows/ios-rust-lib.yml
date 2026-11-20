@@ -4,6 +4,10 @@ name: Build iOS Rust lib
 
 on:
   workflow_dispatch:
+  # workflow_dispatch only works once this file is on the default branch, so a push to this file also starts it.
+  push:
+    branches: [feat/remember-insecure-choice]
+    paths: [".github/workflows/ios-rust-lib.yml"]
 
 permissions:
   contents: read
