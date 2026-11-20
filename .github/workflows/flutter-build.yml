@@ -1478,6 +1478,7 @@ jobs:
                clang \
                cmake \
                curl \
+               default-jdk \
                gcc \
                git \
                g++ \
