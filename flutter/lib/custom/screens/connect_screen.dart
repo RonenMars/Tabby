@@ -25,12 +25,23 @@ class _ConnectScreenState extends State<ConnectScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   Timer? _onlineCheckTimer;
+  // Cadence follows upstream RustDesk (peers_view.dart): 20s and at most 3
+  // polls on the public server, 6s and unlimited on a self-hosted one.
+  var _queryInterval = const Duration(seconds: 20);
+  var _publicServer = true;
+  var _queryCount = 0;
+  DateTime? _lastQuery;
+  var _wasActive = true;
 
   @override
   void initState() {
     super.initState();
     bind.mainLoadRecentPeers();
     gFFI.recentPeersModel.addListener(_onPeersChanged);
+    bind.mainIsUsingPublicServer().then((p) {
+      _publicServer = p;
+      if (!p) _queryInterval = const Duration(seconds: 6);
+    });
     _startOnlineCheck();
   }
 
@@ -46,15 +57,40 @@ class _ConnectScreenState extends State<ConnectScreen> {
   void _onPeersChanged() {
     if (gFFI.recentPeersModel.event == UpdateEvent.load) {
       final ids = gFFI.recentPeersModel.peers.map((p) => p.id).toList();
-      if (ids.isNotEmpty) bind.queryOnlines(ids: ids);
+      if (ids.isNotEmpty) {
+        bind.queryOnlines(ids: ids);
+        _queryCount = 0;
+        _lastQuery = DateTime.now();
+      }
     }
   }
 
   void _startOnlineCheck() {
     _onlineCheckTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      // Skip while a remote session is pushed on top or the app is not in
+      // the foreground; each query opens a new rendezvous connection.
+      final active = mounted &&
+          ModalRoute.of(context)?.isCurrent == true &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      if (!active) {
+        _wasActive = false;
+        return;
+      }
+      if (!_wasActive) {
+        // Back on screen: refresh at once so the dots are not stale.
+        _wasActive = true;
+        _queryCount = 0;
+        _lastQuery = null;
+      }
+      final last = _lastQuery;
+      final due =
+          last == null || DateTime.now().difference(last) >= _queryInterval;
+      if (!due || (_publicServer && _queryCount >= 3)) return;
       final ids = gFFI.recentPeersModel.peers.take(5).map((p) => p.id).toList();
       if (ids.isNotEmpty) {
         bind.queryOnlines(ids: ids);
+        _lastQuery = DateTime.now();
+        _queryCount++;
       }
     });
   }
