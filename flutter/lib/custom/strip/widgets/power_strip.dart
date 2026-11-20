@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
@@ -23,6 +25,7 @@ class PowerStrip extends StatefulWidget {
   final VoidCallback onMouseModeToggle;
   final VoidCallback onClipboardPaste;
   final VoidCallback onNextDisplay;
+  final VoidCallback onPrevDisplay;
   final VoidCallback onFileSend;
   final bool leftHanded;
   final FFI ffi;
@@ -42,6 +45,7 @@ class PowerStrip extends StatefulWidget {
     required this.onMouseModeToggle,
     required this.onClipboardPaste,
     required this.onNextDisplay,
+    required this.onPrevDisplay,
     required this.onFileSend,
     required this.ffi,
     this.onSessionsTap,
@@ -58,6 +62,7 @@ class _PowerStripState extends State<PowerStrip> {
   final Map<String, LayerLink> _cellLinks = {};
   OverlayEntry? _cmdPopup;
   String? _cmdPopupModifier;
+  Timer? _popupTimer;
 
   static const double _popupW = 44.0;
   static const double _popupH = 36.0;
@@ -90,6 +95,7 @@ class _PowerStripState extends State<PowerStrip> {
       _cellLinks.putIfAbsent(keyName, LayerLink.new);
 
   void _dismissCmdPopup() {
+    _popupTimer?.cancel();
     _cmdPopup?.remove();
     _cmdPopup = null;
     _cmdPopupModifier = null;
@@ -106,6 +112,7 @@ class _PowerStripState extends State<PowerStrip> {
           ('X', 'x', {'meta'}),
           ('N', 'n', {'meta'}),
           ('⇧V', 'v', {'meta', 'shift'}),
+          ('⎵', 'space', {'meta'}),
         ];
       case 'control':
         return const [
@@ -126,12 +133,41 @@ class _PowerStripState extends State<PowerStrip> {
   }
 
   void _showCmdPopup(KeyDef k) {
-    _dismissCmdPopup();
     final modifier = k.keyName;
-    final link = _cellLink(modifier);
-    final labels = _popupLabelsFor(modifier);
-    final totalW = _popupW * labels.length + _popupGap * (labels.length - 1);
+    _showPopup(modifier, [
+      for (final l in _popupLabelsFor(modifier))
+        (
+          l.$1,
+          () {
+            widget.inputBridge.tapKey(l.$2, modifiers: l.$3);
+            while (widget.modifierController.modeFor(modifier) !=
+                ModifierMode.off) {
+              widget.modifierController.cycleTap(modifier);
+            }
+            _dismissCmdPopup();
+          }
+        ),
+    ]);
     _cmdPopupModifier = modifier;
+  }
+
+  // ◀ / ▶ above the ⊞ key: previous or next remote display.
+  void _toggleDisplayPopup() {
+    if (_cmdPopup != null) {
+      _dismissCmdPopup();
+      return;
+    }
+    _showPopup('display', [
+      ('◀', () { _dismissCmdPopup(); widget.onPrevDisplay(); }),
+      ('▶', () { _dismissCmdPopup(); widget.onNextDisplay(); }),
+    ]);
+    _popupTimer = Timer(const Duration(seconds: 4), _dismissCmdPopup);
+  }
+
+  void _showPopup(String linkKey, List<(String, VoidCallback)> items) {
+    _dismissCmdPopup();
+    final link = _cellLink(linkKey);
+    final totalW = _popupW * items.length + _popupGap * (items.length - 1);
 
     _cmdPopup = OverlayEntry(
       builder: (ctx) {
@@ -159,13 +195,11 @@ class _PowerStripState extends State<PowerStrip> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (var i = 0; i < labels.length; i++) ...[
+                    for (var i = 0; i < items.length; i++) ...[
                       if (i > 0) const SizedBox(width: _popupGap),
                       _cmdPopupButton(
-                        labels[i].$1,
-                        labels[i].$2,
-                        labels[i].$3,
-                        modifier,
+                        items[i].$1,
+                        items[i].$2,
                         _popupW,
                         _popupH,
                       ),
@@ -219,21 +253,11 @@ class _PowerStripState extends State<PowerStrip> {
   BuildContext? _targetContextFor(LayerLink link) => _targetCtxByLink[link];
 
   Widget _cmdPopupButton(
-      String label,
-      String keyName,
-      Set<String> tapModifiers,
-      String stripModifier,
-      double w,
-      double h) {
+      String label, VoidCallback onTap, double w, double h) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        widget.inputBridge.tapKey(keyName, modifiers: tapModifiers);
-        while (widget.modifierController.modeFor(stripModifier) !=
-            ModifierMode.off) {
-          widget.modifierController.cycleTap(stripModifier);
-        }
-        _dismissCmdPopup();
+        onTap();
       },
       child: Container(
         width: w,
@@ -296,22 +320,37 @@ class _PowerStripState extends State<PowerStrip> {
         mainAxisSize: MainAxisSize.min,
         children: visibleRows.map((row) {
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
+            // Row with a centered arrow cluster gets extra room above it.
+            padding: EdgeInsets.only(top: row.middle.isEmpty ? 2 : 8, bottom: 2),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 double leftW = row.left.fold(0.0, (s, k) => s + kKeyBaseWidth * k.widthFactor + 4);
                 double middleW = row.middle.fold(0.0, (s, k) => s + kKeyBaseWidth * k.widthFactor + 4);
                 double rightW = row.right.fold(0.0, (s, k) => s + kKeyBaseWidth * k.widthFactor + 4);
-                double totalW = leftW + middleW + rightW;
+                double totalW = leftW + middleW + rightW + (row.middle.isEmpty ? 0 : 16);
                 double available = constraints.maxWidth;
                 double scale = totalW > available ? available / totalW : 1.0;
+                // Expanded left/right groups keep the middle group (arrows)
+                // exactly centered, with a gap either side.
                 return Row(
                   children: [
-                    ...row.left.map((k) => _wrapScaled(k, scale)),
-                    const Spacer(),
-                    ...row.middle.map((k) => _wrapScaled(k, scale)),
-                    const Spacer(),
-                    ...row.right.map((k) => _wrapScaled(k, scale)),
+                    Expanded(
+                      child: Row(
+                        children: row.left.map((k) => _wrapScaled(k, scale)).toList(),
+                      ),
+                    ),
+                    if (row.middle.isNotEmpty) SizedBox(width: 8 * scale),
+                    ...row.middle.map((k) => Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 2 * scale),
+                          child: _wrapScaled(k, scale),
+                        )),
+                    if (row.middle.isNotEmpty) SizedBox(width: 8 * scale),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: row.right.map((k) => _wrapScaled(k, scale)).toList(),
+                      ),
+                    ),
                   ],
                 );
               },
@@ -341,6 +380,13 @@ class _PowerStripState extends State<PowerStrip> {
       keyDef: scaled,
       modifierController: widget.modifierController,
       onTap: () => _handle(k),
+      onDoubleTap: k.type == KeyType.nextDisplay
+          ? () {
+              HapticFeedback.lightImpact();
+              _dismissCmdPopup();
+              widget.onNextDisplay();
+            }
+          : null,
       onPressStart: k.type == KeyType.regular
           ? () => _onRegularPressStart(k)
           : null,
@@ -350,8 +396,8 @@ class _PowerStripState extends State<PowerStrip> {
     );
     final hasPopup = k.type == KeyType.modifier &&
         (k.keyName == 'meta' || k.keyName == 'control' || k.keyName == 'alt');
-    if (hasPopup) {
-      final link = _cellLink(k.keyName);
+    if (hasPopup || k.type == KeyType.nextDisplay) {
+      final link = _cellLink(hasPopup ? k.keyName : 'display');
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 2 * scale),
         child: CompositedTransformTarget(
@@ -401,7 +447,7 @@ class _PowerStripState extends State<PowerStrip> {
       case KeyType.clipboardPaste:
         widget.onClipboardPaste();
       case KeyType.nextDisplay:
-        widget.onNextDisplay();
+        _toggleDisplayPopup();
       case KeyType.fileSend:
         widget.onFileSend();
       case KeyType.arrowCross:

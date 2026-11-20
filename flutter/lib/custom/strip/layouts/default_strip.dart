@@ -20,10 +20,10 @@ StripLayout stripLayoutForPlatform(String platform) {
       StripRow(
         left: [
           KeyDef(label: '✕', keyName: '', type: KeyType.disconnect, widthFactor: 0.7),
+          KeyDef(label: 'Esc', keyName: 'escape', type: KeyType.regular),
           shiftDef,
           ctrlDef,
           KeyDef(label: '⏎', keyName: 'return', type: KeyType.regular),
-          KeyDef(label: 'Esc', keyName: 'escape', type: KeyType.regular),
           cmdDef,
           if (platform != kPeerPlatformMacOS)
             KeyDef(label: 'Win', keyName: 'win', type: KeyType.regular),
@@ -35,29 +35,24 @@ StripLayout stripLayoutForPlatform(String platform) {
           KeyDef(label: '⌨', keyName: '', type: KeyType.keyboardToggle, widthFactor: 0.7),
         ],
       ),
-      // Row 2: 🖥 + ⌫ + ⌦ + Tab + ⎵ (left)  |  ⧉ (middle)  |  📎 + ⊞ + 💬 + pUp + pDn + ⚡ + ← ↓ ↑ → (right)
+      // Row 2: 🖥 + ⌫ + ⌦ + Tab + ⎵ (left)  |  ← ↓ ↑ → (centered)  |  ⊞ + ⚡ (right)
       StripRow(
         left: [
           KeyDef(label: '🖥', keyName: '', type: KeyType.displaySwitch, widthFactor: 0.7, height: 48),
-          KeyDef(label: '⌫', keyName: 'backspace', type: KeyType.regular, widthFactor: 1.2, height: 48),
-          KeyDef(label: '⌦', keyName: 'delete', type: KeyType.regular, widthFactor: 1.2, height: 48),
-          KeyDef(label: 'Tab', keyName: 'tab', type: KeyType.regular, widthFactor: 1.2, height: 48),
-          KeyDef(label: '⎵', keyName: 'space', type: KeyType.regular, widthFactor: 1.5, height: 48),
+          KeyDef(label: '⌫', keyName: 'backspace', type: KeyType.regular, widthFactor: 1.0, height: 48),
+          KeyDef(label: '⌦', keyName: 'delete', type: KeyType.regular, widthFactor: 1.0, height: 48),
+          KeyDef(label: 'Tab', keyName: 'tab', type: KeyType.regular, widthFactor: 1.1, height: 48),
+          KeyDef(label: '⎵', keyName: 'space', type: KeyType.regular, widthFactor: 1.2, height: 48),
         ],
         middle: [
-          KeyDef(label: '⧉', keyName: '', type: KeyType.sessionSwitch, widthFactor: 0.7, height: 48),
+          KeyDef(label: '←', keyName: 'left', type: KeyType.regular, widthFactor: 1.0, height: 48),
+          KeyDef(label: '↓', keyName: 'down', type: KeyType.regular, widthFactor: 1.0, height: 48),
+          KeyDef(label: '↑', keyName: 'up', type: KeyType.regular, widthFactor: 1.0, height: 48),
+          KeyDef(label: '→', keyName: 'right', type: KeyType.regular, widthFactor: 1.0, height: 48),
         ],
         right: [
-          KeyDef(label: '📎', keyName: '', type: KeyType.fileSend, widthFactor: 0.7, height: 48),
-          KeyDef(label: '⊞', keyName: '', type: KeyType.nextDisplay, widthFactor: 0.9, height: 48),
-          KeyDef(label: '💬', keyName: '', type: KeyType.chatToggle, widthFactor: 0.7, height: 48),
-          KeyDef(label: '⏫', keyName: 'pageup', type: KeyType.regular, height: 48),
-          KeyDef(label: '⏬', keyName: 'pagedown', type: KeyType.regular, height: 48),
-          KeyDef(label: '⚡', keyName: '', type: KeyType.macroOpener, height: 48),
-          KeyDef(label: '←', keyName: 'left', type: KeyType.regular, widthFactor: 0.7, height: 48),
-          KeyDef(label: '↓', keyName: 'down', type: KeyType.regular, widthFactor: 0.7, height: 48),
-          KeyDef(label: '↑', keyName: 'up', type: KeyType.regular, widthFactor: 0.7, height: 48),
-          KeyDef(label: '→', keyName: 'right', type: KeyType.regular, widthFactor: 0.7, height: 48),
+          KeyDef(label: '⊞', keyName: '', type: KeyType.nextDisplay, widthFactor: 0.8, height: 48),
+          KeyDef(label: '⚡', keyName: '', type: KeyType.macroOpener, widthFactor: 0.9, height: 48),
         ],
       ),
     ],

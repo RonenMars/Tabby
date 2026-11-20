@@ -27,6 +27,7 @@ class FloatingMacroBar extends StatefulWidget {
   final VoidCallback onZoomFit;
   final VoidCallback onMouseModeToggle;
   final VoidCallback onClipboardPaste;
+  final VoidCallback? onSessionsTap;
 
   const FloatingMacroBar({
     super.key,
@@ -35,6 +36,7 @@ class FloatingMacroBar extends StatefulWidget {
     required this.onZoomFit,
     required this.onMouseModeToggle,
     required this.onClipboardPaste,
+    this.onSessionsTap,
   });
 
   @override
@@ -166,6 +168,35 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
   List<Widget> _buildButtons() {
     final b = widget.bridge;
     return [
+      // ── Bottom block (nearest the handle), lowest first ──────────────────
+      _Btn(label: '⌘⎵',  tooltip: 'Spotlight (Cmd+Space)',    onTap: () => b.tapKey('space', modifiers: {'meta'})),
+      _gap(),
+      _Btn(label: '📋→', tooltip: 'Paste iPhone clipboard',   onTap: () { widget.onClipboardPaste(); _toggleCollapse(); }),
+      _gap(),
+      _Btn(label: '⌥↵',  tooltip: 'Option+Enter',             onTap: () => b.tapKey('return', modifiers: {'alt'})),
+      _gap(),
+      _Btn(label: 'Tg',   tooltip: 'Open Telegram',            onTap: () async {
+        await b.tapKey('space', modifiers: {'meta'});
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        await b.typeString('telegram');
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        await b.tapKey('return');
+      }),
+      _gap(),
+      _Btn(label: '⌘⇥',  tooltip: 'App Switcher',            onTap: () => b.tapKey('tab', modifiers: {'meta'})),
+      _gap(),
+      _Btn(label: '⌃V',  tooltip: 'Ctrl+V',                  onTap: () => b.tapKey('v', modifiers: {'ctrl'})),
+      _gap(),
+      _Btn(label: '⇞',   tooltip: 'Page Up',                  onTap: () => b.tapKey('pageup')),
+      _gap(),
+      _Btn(label: '⇟',   tooltip: 'Page Down',                onTap: () => b.tapKey('pagedown')),
+      _gap(),
+      _Btn(label: '⌘⇧V', tooltip: 'Cmd+Shift+V',             onTap: () => b.tapKey('v', modifiers: {'meta', 'shift'})),
+      _gap(),
+      if (widget.onSessionsTap != null) ...[
+        _Btn(label: '⧉', tooltip: 'Sessions', onTap: widget.onSessionsTap!),
+        _gap(),
+      ],
       _Btn(label: 'appr', tooltip: 'approved + Enter', onTap: () async {
         await b.typeString('approved');
         await b.tapKey('return');
@@ -203,33 +234,11 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
       _gap(),
       _Btn(label: 'git\ncmt', tooltip: 'git commit',           onTap: () => b.typeString('git commit\n')),
       _gap(),
-      _Btn(label: '⌃V',  tooltip: 'Ctrl+V',                  onTap: () => b.tapKey('v', modifiers: {'ctrl'})),
-      _gap(),
       _Btn(label: '⌘V',  tooltip: 'Cmd+V',                   onTap: () => b.tapKey('v', modifiers: {'meta'})),
-      _gap(),
-      _Btn(label: '⌘⇧V', tooltip: 'Cmd+Shift+V',             onTap: () => b.tapKey('v', modifiers: {'meta', 'shift'})),
       _gap(),
       _Btn(label: '⌘⇧[', tooltip: '1Password',               onTap: () => b.tapKey('[', modifiers: {'meta', 'shift'})),
       _gap(),
-      _Btn(label: '⌘⎵',  tooltip: 'Spotlight (Cmd+Space)',    onTap: () => b.tapKey('space', modifiers: {'meta'})),
-      _gap(),
-      _Btn(label: 'Tg',   tooltip: 'Open Telegram',            onTap: () async {
-        await b.tapKey('space', modifiers: {'meta'});
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-        await b.typeString('telegram');
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: '⌘⇥',  tooltip: 'App Switcher',            onTap: () => b.tapKey('tab', modifiers: {'meta'})),
-      _gap(),
       _Btn(label: '⌘N',  tooltip: 'New Window',               onTap: () => b.tapKey('n', modifiers: {'meta'})),
-      _gap(),
-      _Btn(label: '⇞',   tooltip: 'Page Up',                  onTap: () => b.tapKey('pageup')),
-      _gap(),
-      _Btn(label: '⇟',   tooltip: 'Page Down',                onTap: () => b.tapKey('pagedown')),
-      _gap(),
-      _Btn(label: '⌥↵',  tooltip: 'Option+Enter',             onTap: () => b.tapKey('return', modifiers: {'alt'})),
       _gap(),
       _Btn(label: 'F12', tooltip: 'F12',                      onTap: () => b.tapKey('f12')),
       _gap(),
@@ -261,8 +270,6 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
       _Btn(label: '⌘⇧2', tooltip: 'Screenshot',              onTap: () => b.tapKey('2', modifiers: {'meta', 'shift'})),
       _gap(),
       _Btn(label: '⤢',   tooltip: 'Zoom to fit height',       onTap: () { widget.onZoomFit(); _toggleCollapse(); }),
-      _gap(),
-      _Btn(label: '📋→', tooltip: 'Paste iPhone clipboard',   onTap: () { widget.onClipboardPaste(); _toggleCollapse(); }),
       _gap(),
       _Btn(
         tooltip: 'Toggle mouse/touch mode',
