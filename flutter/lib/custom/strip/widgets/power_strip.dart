@@ -134,7 +134,7 @@ class _PowerStripState extends State<PowerStrip> {
 
   void _showCmdPopup(KeyDef k) {
     final modifier = k.keyName;
-    _showPopup(modifier, [
+    _showPopup(modifier, perRow: modifier == 'control' ? 4 : null, [
       for (final l in _popupLabelsFor(modifier))
         (
           l.$1,
@@ -164,10 +164,15 @@ class _PowerStripState extends State<PowerStrip> {
     _popupTimer = Timer(const Duration(seconds: 4), _dismissCmdPopup);
   }
 
-  void _showPopup(String linkKey, List<(String, VoidCallback)> items) {
+  // `perRow` wraps the buttons onto several centered lines (default: one line).
+  void _showPopup(String linkKey, List<(String, VoidCallback)> items,
+      {int? perRow}) {
     _dismissCmdPopup();
     final link = _cellLink(linkKey);
-    final totalW = _popupW * items.length + _popupGap * (items.length - 1);
+    final cols = perRow ?? items.length;
+    final rows = (items.length / cols).ceil();
+    final totalW = _popupW * cols + _popupGap * (cols - 1);
+    final totalH = _popupH * rows + _popupGap * (rows - 1);
 
     _cmdPopup = OverlayEntry(
       builder: (ctx) {
@@ -191,17 +196,27 @@ class _PowerStripState extends State<PowerStrip> {
               color: Colors.transparent,
               child: SizedBox(
                 width: totalW,
-                height: _popupH,
-                child: Row(
+                height: totalH,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (var i = 0; i < items.length; i++) ...[
-                      if (i > 0) const SizedBox(width: _popupGap),
-                      _cmdPopupButton(
-                        items[i].$1,
-                        items[i].$2,
-                        _popupW,
-                        _popupH,
+                    for (var r = 0; r < rows; r++) ...[
+                      if (r > 0) const SizedBox(height: _popupGap),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = r * cols;
+                              i < (r + 1) * cols && i < items.length;
+                              i++) ...[
+                            if (i > r * cols) const SizedBox(width: _popupGap),
+                            _cmdPopupButton(
+                              items[i].$1,
+                              items[i].$2,
+                              _popupW,
+                              _popupH,
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ],
