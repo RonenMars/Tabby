@@ -35,6 +35,6 @@ void main() {
     final all = [...row.left, ...row.middle, ...row.right].map((k) => k.label);
 
     expect(row.middle.map((k) => k.label), ['←', '↓', '↑', '→']);
-    expect(all, isNot(containsAny(['📎', '💬', '⏫', '⏬', '⧉'])));
+    expect(all.where(['📎', '💬', '⏫', '⏬', '⧉'].contains), isEmpty);
   });
 }

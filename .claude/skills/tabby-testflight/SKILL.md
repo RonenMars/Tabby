@@ -18,7 +18,7 @@ Authoritative source for the steps: `docs/tabby/deploy-testflight.md` in the rep
 
 1. Working tree is clean OR the changes you intend to ship are already committed. If dirty, ask the user before continuing — uncommitted code that ships is a debugging hazard.
 2. API key file exists at `~/.appstoreconnect/private_keys/AuthKey_G7S8Q6D6Z9.p8`. Recover from 1Password if missing (see repo doc).
-3. System `flutter` is 3.41.8. **Never** use `fvm flutter` for Tabby builds.
+3. Build with Flutter 3.41.8 via `fvm spawn 3.41.8 ...`, never plain `fvm flutter` (`.fvmrc` pins 3.47.2, which fails to archive). Prerequisites and the Rust library build are in `docs/tabby/deploy-testflight.md`.
 
 ## Identifiers
 
@@ -39,9 +39,10 @@ Commit the bump (and any other intended changes) — get explicit approval per t
 From the repo root:
 
 ```bash
+# first build the Rust lib if target/aarch64-apple-ios/release/liblibrustdesk.a is missing (see the doc)
 cd flutter
-flutter pub get 2>&1 | tail -3
-flutter build ipa --release \
+fvm spawn 3.41.8 pub get 2>&1 | tail -3
+fvm spawn 3.41.8 build ipa --release \
   --export-options-plist=ios/exportOptions.plist \
   --no-pub 2>&1 | tail -12
 ```

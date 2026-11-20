@@ -248,7 +248,7 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
   }
 
   void _onDisplaySwitch() {
-    showOptions(context, widget.id, widget.ffi.dialogManager);
+    showOptions(context, widget.id, widget.ffi.dialogManager, sessionFfi: widget.ffi);
   }
 
   void _onNextDisplay() => _stepDisplay(1);
