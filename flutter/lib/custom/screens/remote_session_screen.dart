@@ -270,12 +270,16 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
     showOptions(context, widget.id, widget.ffi.dialogManager, sessionFfi: widget.ffi);
   }
 
-  void _onNextDisplay() {
+  void _onNextDisplay() => _stepDisplay(1);
+
+  void _onPrevDisplay() => _stepDisplay(-1);
+
+  void _stepDisplay(int delta) {
     final pi = widget.ffi.ffiModel.pi;
     final count = pi.displays.length;
     if (count <= 1) return;
-    final next = (pi.currentDisplay + 1) % count;
-    openMonitorInTheSameTab(next, widget.ffi, pi, updateCursorPos: true);
+    final target = (pi.currentDisplay + delta + count) % count;
+    openMonitorInTheSameTab(target, widget.ffi, pi, updateCursorPos: true);
   }
 
   void _onZoomFit() {
@@ -433,6 +437,7 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
                 onMouseModeToggle: _onMouseModeToggle,
                 onClipboardPaste: _onClipboardPaste,
                 onNextDisplay: _onNextDisplay,
+                onPrevDisplay: _onPrevDisplay,
                 onFileSend: _onFileSend,
                 ffi: widget.ffi,
                 onSessionsTap: _onSessionsTap,
@@ -504,6 +509,7 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
           onZoomFit: _onZoomFit,
           onMouseModeToggle: _onMouseModeToggle,
           onClipboardPaste: _onClipboardPaste,
+          onSessionsTap: _onSessionsTap,
         ),
 
         // Temporary QA control: recreate the hidden input field without

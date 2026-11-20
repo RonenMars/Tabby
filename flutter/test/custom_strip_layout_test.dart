@@ -22,4 +22,19 @@ void main() {
 
     expect(labels, contains('Win'));
   });
+
+  test('row 1 puts Esc between close and shift', () {
+    final labels =
+        stripLayoutForPlatform(kPeerPlatformMacOS).rows.first.left.map((k) => k.label).toList();
+
+    expect(labels.sublist(0, 3), ['✕', 'Esc', '⇧']);
+  });
+
+  test('row 2 centers the four arrows and drops moved keys', () {
+    final row = stripLayoutForPlatform(kPeerPlatformMacOS).rows[1];
+    final all = [...row.left, ...row.middle, ...row.right].map((k) => k.label);
+
+    expect(row.middle.map((k) => k.label), ['←', '↓', '↑', '→']);
+    expect(all.where(['📎', '💬', '⏫', '⏬', '⧉'].contains), isEmpty);
+  });
 }

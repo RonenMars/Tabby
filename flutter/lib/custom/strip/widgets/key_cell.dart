@@ -18,6 +18,8 @@ class KeyCell extends StatelessWidget {
   final KeyDef keyDef;
   final ModifierController modifierController;
   final VoidCallback onTap;
+  // When set, a single tap is delayed ~300ms to tell it apart from a double tap.
+  final VoidCallback? onDoubleTap;
 
   // Used for KeyType.regular — split press lifecycle so the held modifier
   // can stay down until the in-flight tap finishes (avoids a race where the
@@ -30,6 +32,7 @@ class KeyCell extends StatelessWidget {
     required this.keyDef,
     required this.modifierController,
     required this.onTap,
+    this.onDoubleTap,
     this.onPressStart,
     this.onPressEnd,
   });
@@ -70,6 +73,7 @@ class KeyCell extends StatelessWidget {
       height: keyDef.height,
       mode: ModifierMode.off,
       onTap: onTap,
+      onDoubleTap: onDoubleTap,
     );
   }
 }
@@ -80,6 +84,7 @@ class _KeyButton extends StatelessWidget {
   final double? height;
   final ModifierMode mode;
   final VoidCallback onTap;
+  final VoidCallback? onDoubleTap;
   final GestureLongPressStartCallback? onLongPressStart;
   final GestureLongPressEndCallback? onLongPressEnd;
 
@@ -88,6 +93,7 @@ class _KeyButton extends StatelessWidget {
     required this.widthFactor,
     required this.mode,
     required this.onTap,
+    this.onDoubleTap,
     this.height,
     this.onLongPressStart,
     this.onLongPressEnd,
@@ -112,6 +118,7 @@ class _KeyButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onDoubleTap: onDoubleTap,
       onLongPressStart: onLongPressStart,
       onLongPressEnd: onLongPressEnd,
       child: _KeyVisual(
