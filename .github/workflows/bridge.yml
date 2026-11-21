@@ -1,4 +1,4 @@
-# This yaml shares the build bridge steps with ci and nightly.
+# Called by flutter-build.yml to generate the FFI bridge for iOS and Android.
 name: Build flutter-rust-bridge
 # 2023-11-23 18:00:00+00:00
 
@@ -8,8 +8,8 @@ on:
 env:
   CARGO_EXPAND_VERSION: "1.0.95"
   FLUTTER_RUST_BRIDGE_VERSION: "1.80.1"
-  RUST_VERSION: "1.75" # https://github.com/rustdesk/rustdesk/discussions/7503
-  BRIDGE_FLUTTER_VERSION: "3.47.2"
+  RUST_VERSION: "1.88.0" # rust-toolchain.toml
+  BRIDGE_FLUTTER_VERSION: "3.41.8" # docs/tabby/deploy-testflight.md
   BRIDGE_ARTIFACT_NAME: "bridge-artifact"
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          # Shared bridge for every platform on Flutter 3.47.2.
+          # Shared bridge for iOS and arm64 Android on Flutter 3.41.8.
           - {
               target: x86_64-unknown-linux-gnu,
               os: ubuntu-22.04,
