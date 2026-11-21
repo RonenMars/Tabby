@@ -1478,12 +1478,14 @@ jobs:
                clang \
                cmake \
                curl \
+               default-jdk \
                gcc \
                git \
                g++ \
                libayatana-appindicator3-dev \
                libasound2-dev \
                libclang-dev \
+               libcurl4-openssl-dev \
                libgstreamer1.0-dev \
                libgstreamer-plugins-base1.0-dev \
                libgtk-3-dev \
