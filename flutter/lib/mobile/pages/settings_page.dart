@@ -808,6 +808,27 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                       });
                     },
             ),
+          if (!incomingOnly)
+            SettingsTile(
+              title: Text(translate('reset-insecure-connection-choices')),
+              leading: Icon(Icons.restore),
+              onPressed: (context) async {
+                final json = await bind.mainLoadRecentPeersForAb(filter: '');
+                final peers = json.isEmpty
+                    ? const []
+                    : (jsonDecode(json) as List).cast<Map<String, dynamic>>();
+                for (final p in peers) {
+                  final id = p['id'] as String;
+                  if (await bind.mainGetPeerOption(
+                          id: id, key: 'trust-insecure') ==
+                      'Y') {
+                    await bind.mainSetPeerOption(
+                        id: id, key: 'trust-insecure', value: '');
+                  }
+                }
+                showToast(translate('Successful'));
+              },
+            ),
           if (isAndroid && !outgoingOnly && !_isUsingPublicServer)
             SettingsTile.switchTile(
               title: Text(translate('Disable UDP')),
