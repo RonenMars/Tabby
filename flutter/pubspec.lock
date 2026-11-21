@@ -841,6 +841,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  jni:
+    dependency: transitive
+    description:
+      name: jni
+      sha256: d2c361082d554d4593c3012e26f6b188f902acd291330f13d6427641a92b3da1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.14.2"
   js:
     dependency: transitive
     description:
@@ -1185,6 +1193,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.0"
+  sentry:
+    dependency: transitive
+    description:
+      name: sentry
+      sha256: "79b087ccc713bf7e6d44a4b3b081ee6f2c3e76045e1e2ae2b8c2ccee7ef21a96"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.30.2"
+  sentry_flutter:
+    dependency: "direct main"
+    description:
+      name: sentry_flutter
+      sha256: b107275224b6fe258c26f3b51ed924d258de395fd4e7a62831afe41181e1495c
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.30.2"
   settings_ui:
     dependency: "direct main"
     description:
