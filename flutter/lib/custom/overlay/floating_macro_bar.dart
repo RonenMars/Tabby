@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_hbb/common.dart';
 
 import '../input/input_bridge.dart';
 import '../settings/settings_store.dart';
@@ -16,27 +15,19 @@ const _kTabSize = 36.0;
 const _kGap = 6.0;
 // Right-edge inset from screen edge.
 const _kRightInset = 8.0;
-// Width of horizontal submenu buttons.
-const _kSubBtnSize = 48.0;
 
 class FloatingMacroBar extends StatefulWidget {
   final InputBridge bridge;
   // Bottom of the canvas area (top of the power strip). The bar is anchored
   // just above this value so it sits flush above the custom keyboard strip.
   final double stripTop;
-  final VoidCallback onZoomFit;
-  final VoidCallback onMouseModeToggle;
   final VoidCallback onClipboardPaste;
-  final VoidCallback? onSessionsTap;
 
   const FloatingMacroBar({
     super.key,
     required this.bridge,
     required this.stripTop,
-    required this.onZoomFit,
-    required this.onMouseModeToggle,
     required this.onClipboardPaste,
-    this.onSessionsTap,
   });
 
   @override
@@ -49,7 +40,6 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
   // Positive values move the handle further up the screen.
   late double _above;
   bool _collapsed = false;
-  bool _rectOpen = false;
 
   late final AnimationController _animCtl;
   late final Animation<double> _expandAnim;
@@ -78,7 +68,6 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
     HapticFeedback.lightImpact();
     setState(() {
       _collapsed = !_collapsed;
-      if (_collapsed) _rectOpen = false;
     });
     if (_collapsed) {
       _animCtl.reverse();
@@ -119,12 +108,6 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Rectangle corner submenu — slides in to the left ───────────────
-          if (_rectOpen) ...[
-            _RectSubmenu(bridge: widget.bridge),
-            const SizedBox(width: _kGap),
-          ],
-
           // ── Vertical macro bar ─────────────────────────────────────────────
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -167,8 +150,8 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
 
   List<Widget> _buildButtons() {
     final b = widget.bridge;
+    // Lowest first: the column grows upward, so ⌃V is the top button.
     return [
-      // ── Bottom block (nearest the handle), lowest first ──────────────────
       _Btn(label: '⌘⎵',  tooltip: 'Spotlight (Cmd+Space)',    onTap: () => b.tapKey('space', modifiers: {'meta'})),
       _gap(),
       _Btn(label: '📋→', tooltip: 'Paste iPhone clipboard',   onTap: () { widget.onClipboardPaste(); _toggleCollapse(); }),
@@ -186,161 +169,10 @@ class _FloatingMacroBarState extends State<FloatingMacroBar>
       _Btn(label: '⌘⇥',  tooltip: 'App Switcher',            onTap: () => b.tapKey('tab', modifiers: {'meta'})),
       _gap(),
       _Btn(label: '⌃V',  tooltip: 'Ctrl+V',                  onTap: () => b.tapKey('v', modifiers: {'ctrl'})),
-      _gap(),
-      _Btn(label: '⇞',   tooltip: 'Page Up',                  onTap: () => b.tapKey('pageup')),
-      _gap(),
-      _Btn(label: '⇟',   tooltip: 'Page Down',                onTap: () => b.tapKey('pagedown')),
-      _gap(),
-      _Btn(label: '⌘⇧V', tooltip: 'Cmd+Shift+V',             onTap: () => b.tapKey('v', modifiers: {'meta', 'shift'})),
-      _gap(),
-      if (widget.onSessionsTap != null) ...[
-        _Btn(label: '⧉', tooltip: 'Sessions', onTap: widget.onSessionsTap!),
-        _gap(),
-      ],
-      _Btn(label: 'appr', tooltip: 'approved + Enter', onTap: () async {
-        await b.typeString('approved');
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: 'c+p', tooltip: 'commit and push + Enter', onTap: () async {
-        await b.typeString('commit and push');
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: 'c+p+d', tooltip: 'commit, push and deploy + Enter', onTap: () async {
-        await b.typeString('commit, push and deploy');
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: '/clr', tooltip: '/clear + Enter', onTap: () async {
-        await b.typeString('/clear');
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: '/rsm', tooltip: '/resume + Enter', onTap: () async {
-        await b.typeString('/resume');
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: 'cc', tooltip: 'cc + Enter', onTap: () async {
-        await b.typeString('cc');
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: '/exit', tooltip: '/exit + Enter', onTap: () async {
-        await b.typeString('/exit');
-        await b.tapKey('return');
-      }),
-      _gap(),
-      _Btn(label: 'git\ncmt', tooltip: 'git commit',           onTap: () => b.typeString('git commit\n')),
-      _gap(),
-      _Btn(label: '⌘V',  tooltip: 'Cmd+V',                   onTap: () => b.tapKey('v', modifiers: {'meta'})),
-      _gap(),
-      _Btn(label: '⌘⇧[', tooltip: '1Password',               onTap: () => b.tapKey('[', modifiers: {'meta', 'shift'})),
-      _gap(),
-      _Btn(label: '⌘N',  tooltip: 'New Window',               onTap: () => b.tapKey('n', modifiers: {'meta'})),
-      _gap(),
-      _Btn(label: 'F12', tooltip: 'F12',                      onTap: () => b.tapKey('f12')),
-      _gap(),
-      // ── Rectangle window manager ──────────────────────────────────────────
-      _Btn(
-        label: '⤢↑',
-        tooltip: 'Rectangle: Maximize',
-        onTap: () => b.tapKey('up', modifiers: {'ctrl', 'alt', 'meta'}),
-      ),
-      _gap(),
-      _Btn(
-        label: '⤢←',
-        tooltip: 'Rectangle: Left Half',
-        onTap: () => b.tapKey('left', modifiers: {'meta', 'alt'}),
-      ),
-      _gap(),
-      _Btn(
-        label: '⤢→',
-        tooltip: 'Rectangle: Right Half',
-        onTap: () => b.tapKey('right', modifiers: {'meta', 'alt'}),
-      ),
-      _gap(),
-      _Btn(
-        label: '▭',
-        tooltip: 'Rectangle: Corners',
-        onTap: () => setState(() => _rectOpen = !_rectOpen),
-      ),
-      _gap(),
-      _Btn(label: '⌘⇧2', tooltip: 'Screenshot',              onTap: () => b.tapKey('2', modifiers: {'meta', 'shift'})),
-      _gap(),
-      _Btn(label: '⤢',   tooltip: 'Zoom to fit height',       onTap: () { widget.onZoomFit(); _toggleCollapse(); }),
-      _gap(),
-      _Btn(
-        tooltip: 'Toggle mouse/touch mode',
-        labelBuilder: () => gFFI.ffiModel.touchMode ? '🖱' : '👆',
-        onTap: widget.onMouseModeToggle,
-      ),
     ];
   }
 
   Widget _gap() => const SizedBox(height: _kGap);
-}
-
-// ── Rectangle corner submenu (horizontal row to the left of the bar) ──────────
-
-class _RectSubmenu extends StatelessWidget {
-  final InputBridge bridge;
-  const _RectSubmenu({required this.bridge});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _SubBtn(label: '↖', tooltip: 'Top Left (Ctrl+Alt+U)',    onTap: () => bridge.tapKey('u', modifiers: {'ctrl', 'alt'})),
-        const SizedBox(width: _kGap),
-        _SubBtn(label: '↗', tooltip: 'Top Right (Ctrl+Alt+I)',   onTap: () => bridge.tapKey('i', modifiers: {'ctrl', 'alt'})),
-        const SizedBox(width: _kGap),
-        _SubBtn(label: '↙', tooltip: 'Bottom Left (Ctrl+Alt+J)', onTap: () => bridge.tapKey('j', modifiers: {'ctrl', 'alt'})),
-        const SizedBox(width: _kGap),
-        _SubBtn(label: '↘', tooltip: 'Bottom Right (Ctrl+Alt+K)',onTap: () => bridge.tapKey('k', modifiers: {'ctrl', 'alt'})),
-      ],
-    );
-  }
-}
-
-class _SubBtn extends StatelessWidget {
-  final String label;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _SubBtn({required this.label, required this.tooltip, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      preferBelow: false,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
-        child: Container(
-          width: _kSubBtnSize,
-          height: _kSubBtnSize,
-          decoration: BoxDecoration(
-            color: AppTokens.colorBgSurface,
-            borderRadius: BorderRadius.circular(AppTokens.radiusKey),
-            boxShadow: const [
-              BoxShadow(blurRadius: 4, color: Colors.black26, offset: Offset(0, 1)),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: AppTokens.fontKey.copyWith(color: AppTokens.colorTextHigh),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ── Drag handle ────────────────────────────────────────────────────────────────
@@ -374,17 +206,15 @@ class _Handle extends StatelessWidget {
 // ── Single macro button ────────────────────────────────────────────────────────
 
 class _Btn extends StatelessWidget {
-  final String? label;
-  final String Function()? labelBuilder;
+  final String label;
   final String tooltip;
   final VoidCallback onTap;
 
   const _Btn({
-    this.label,
-    this.labelBuilder,
+    required this.label,
     required this.tooltip,
     required this.onTap,
-  }) : assert(label != null || labelBuilder != null);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -408,7 +238,7 @@ class _Btn extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              labelBuilder != null ? labelBuilder!() : label!,
+              label,
               style: AppTokens.fontKey.copyWith(color: AppTokens.colorTextHigh),
               textAlign: TextAlign.center,
             ),

@@ -506,10 +506,7 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
         FloatingMacroBar(
           bridge: _bridge,
           stripTop: stripBottom + _stripHeight,
-          onZoomFit: _onZoomFit,
-          onMouseModeToggle: _onMouseModeToggle,
           onClipboardPaste: _onClipboardPaste,
-          onSessionsTap: _onSessionsTap,
         ),
 
         // Temporary QA control: recreate the hidden input field without

@@ -345,26 +345,21 @@ class _PowerStripState extends State<PowerStrip> {
                 double totalW = leftW + middleW + rightW + (row.middle.isEmpty ? 0 : 16);
                 double available = constraints.maxWidth;
                 double scale = totalW > available ? available / totalW : 1.0;
-                // Expanded left/right groups keep the middle group (arrows)
-                // exactly centered, with a gap either side.
+                // Equal spacers keep the gap before the arrow cluster the same
+                // size as the gap after it. Equal Expanded slots do not: the
+                // left cluster is wider, so it overflowed into the arrows.
                 return Row(
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: row.left.map((k) => _wrapScaled(k, scale)).toList(),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: row.left.map((k) => _wrapScaled(k, scale)).toList(),
                     ),
-                    if (row.middle.isNotEmpty) SizedBox(width: 8 * scale),
-                    ...row.middle.map((k) => Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 2 * scale),
-                          child: _wrapScaled(k, scale),
-                        )),
-                    if (row.middle.isNotEmpty) SizedBox(width: 8 * scale),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: row.right.map((k) => _wrapScaled(k, scale)).toList(),
-                      ),
+                    const Spacer(),
+                    ...row.middle.map((k) => _wrapScaled(k, scale)),
+                    if (row.middle.isNotEmpty) const Spacer(),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: row.right.map((k) => _wrapScaled(k, scale)).toList(),
                     ),
                   ],
                 );
