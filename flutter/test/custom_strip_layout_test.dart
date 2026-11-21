@@ -23,11 +23,11 @@ void main() {
     expect(labels, contains('Win'));
   });
 
-  test('row 1 puts Esc between close and shift', () {
-    final labels =
-        stripLayoutForPlatform(kPeerPlatformMacOS).rows.first.left.map((k) => k.label).toList();
+  test('row 1 puts the strip toggle between close and shift and Esc on the right', () {
+    final row = stripLayoutForPlatform(kPeerPlatformMacOS).rows.first;
 
-    expect(labels.sublist(0, 3), ['✕', 'Esc', '⇧']);
+    expect(row.left.map((k) => k.label).take(3), ['✕', '▲▼', '⇧']);
+    expect(row.right.map((k) => k.label).take(2), ['Esc', '⇧']);
   });
 
   test('row 2 centers the four arrows and drops moved keys', () {

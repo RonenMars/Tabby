@@ -16,11 +16,11 @@ StripLayout stripLayoutForPlatform(String platform) {
 
   return StripLayout(
     rows: [
-      // Row 1: disconnect + ⇧ + Ctrl + ⏎ + Esc + platform modifier + Win (non-macOS) + Alt (left)  |  ▲▼ + Y + ⌨ (right)
+      // Row 1: disconnect + ▲▼ + ⇧ + Ctrl + ⏎ + platform modifier + Win (non-macOS) + Alt (left)  |  Esc + ⇧ + ⌨ (right)
       StripRow(
         left: [
           KeyDef(label: '✕', keyName: '', type: KeyType.disconnect, widthFactor: 0.7),
-          KeyDef(label: 'Esc', keyName: 'escape', type: KeyType.regular),
+          KeyDef(label: '▲▼', keyName: '', type: KeyType.stripToggle, widthFactor: 0.7),
           shiftDef,
           ctrlDef,
           KeyDef(label: '⏎', keyName: 'return', type: KeyType.regular),
@@ -30,8 +30,8 @@ StripLayout stripLayoutForPlatform(String platform) {
           altDef,
         ],
         right: [
-          KeyDef(label: '▲▼', keyName: '', type: KeyType.stripToggle, widthFactor: 0.7),
-          KeyDef(label: 'Y', keyName: '', type: KeyType.typeString, widthFactor: 0.7, keyString: 'yes', sendEnter: true),
+          KeyDef(label: 'Esc', keyName: 'escape', type: KeyType.regular),
+          shiftDef.copyWith(widthFactor: 0.7),
           KeyDef(label: '⌨', keyName: '', type: KeyType.keyboardToggle, widthFactor: 0.7),
         ],
       ),
