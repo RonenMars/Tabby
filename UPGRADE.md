@@ -25,11 +25,13 @@ The Phase 0 spike confirmed that all custom Tabby code lives under
 `flutter/lib/custom/` and exactly **one** upstream Dart file is touched:
 the feature-flag line in `flutter/lib/main.dart` (see plan §4.1). The
 only other upstream-side touches are iOS Xcode-project files where
-Tabby's team / bundle ID diverge from Carriez's. Everything else in the
-tree is upstream-as-is. As a consequence, an upstream merge should
+Tabby's team / bundle ID diverge from Carriez's, and `.github/workflows/`,
+which is trimmed to iOS plus one arm64 Android APK. Everything else in
+the tree is upstream-as-is. As a consequence, an upstream merge should
 produce conflicts only in `main.dart` (and only if upstream changed that
-file's `runApp` block in the same area), plus possibly in
-`flutter/ios/Runner.xcodeproj/project.pbxproj` if signing settings moved.
+file's `runApp` block in the same area), in
+`flutter/ios/Runner.xcodeproj/project.pbxproj` if signing settings moved,
+and in `.github/workflows/` (keep ours; see step 4).
 
 If you ever find yourself resolving conflicts in many files, **stop** —
 something in our process drifted from the sibling-directory pattern and
@@ -85,6 +87,10 @@ For `flutter/ios/Runner.xcodeproj/project.pbxproj`, expect conflicts on
 `DEVELOPMENT_TEAM` and `PRODUCT_BUNDLE_IDENTIFIER` if upstream renamed
 or restructured signing settings — always resolve to Tabby's values
 (`GUW6BN8X57` and `dev.ronenmars.tabby`).
+
+For `.github/workflows/`, keep ours. That tree is trimmed to iOS and
+arm64 Android. Upstream still builds the other desktops, ABIs, and
+packages, so those files will conflict. Do not take the upstream side.
 
 ### 5. Re-pin Flutter / Rust if upstream changed them
 
