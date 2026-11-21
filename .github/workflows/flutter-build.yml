@@ -118,6 +118,9 @@ jobs:
           path: ./
 
       - name: Build rustdesk lib
+        env:
+          # rustc defaults to iOS 10.0, where ___chkstk_darwin (used by aom built with the current SDK) does not exist.
+          IPHONEOS_DEPLOYMENT_TARGET: "15.0"
         run: |
           rustup target add ${{ matrix.job.target }}
           cargo build --locked --features flutter,hwcodec --release --target aarch64-apple-ios --lib
