@@ -52,7 +52,6 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
   late final InputBridge _bridge;
   final _modCtl = ModifierController();
   final _kbFocusNode = FocusNode(debugLabel: 'Tabby remote keyboard');
-  int _keyboardGeneration = 0;
   _ChatState _chatState = _ChatState.closed;
   double _stripHeight = 0;
   double _partialBarHeight = 0;
@@ -107,18 +106,7 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
   }
 
   void _logKeyboardFocus() {
-    KeyboardTelemetry.event('focus_changed', data: {'focused': _kbFocusNode.hasFocus, 'primary': _kbFocusNode.hasPrimaryFocus, 'generation': _keyboardGeneration});
-  }
-
-  void _resetKeyboardInput() {
-    KeyboardTelemetry.event('reset_requested', data: {'generation': _keyboardGeneration, 'focused': _kbFocusNode.hasFocus});
-    _kbFocusNode.unfocus();
-    setState(() => _keyboardGeneration++);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _kbFocusNode.requestFocus();
-      KeyboardTelemetry.event('focus_requested', data: {'generation': _keyboardGeneration});
-    });
+    KeyboardTelemetry.event('focus_changed', data: {'focused': _kbFocusNode.hasFocus, 'primary': _kbFocusNode.hasPrimaryFocus});
   }
 
   void _onKeyboardTap() {
@@ -403,7 +391,6 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
           left: 0,
           top: 0,
           child: TextFieldBridge(
-            key: ValueKey(_keyboardGeneration),
             inputBridge: _bridge,
             modifierController: _modCtl,
             focusNode: _kbFocusNode,
@@ -508,25 +495,6 @@ class _RemoteSessionScreenState extends State<RemoteSessionScreen> {
           stripTop: stripBottom + _stripHeight,
           onClipboardPaste: _onClipboardPaste,
         ),
-
-        // Temporary QA control: recreate the hidden input field without
-        // reconnecting the remote session. Remove after diagnosis.
-        if (_chatState != _ChatState.max)
-          Positioned(
-            right: 8,
-            bottom: stripBottom + _stripHeight + 8,
-            child: SafeArea(
-              child: Material(
-                color: const Color(0xFF334155),
-                borderRadius: BorderRadius.circular(8),
-                child: TextButton.icon(
-                  onPressed: _resetKeyboardInput,
-                  icon: const Icon(Icons.restart_alt, color: Colors.white, size: 18),
-                  label: const Text('Reset Keyboard', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ),
-          ),
 
         // Layer 5: full-screen dialog overlay, keyed to _fullScreenOverlayState.
         // Dialogs (password prompt, etc.) inserted here span the entire screen.
