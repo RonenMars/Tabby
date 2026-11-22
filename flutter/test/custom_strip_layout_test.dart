@@ -27,14 +27,17 @@ void main() {
     final row = stripLayoutForPlatform(kPeerPlatformMacOS).rows.first;
 
     expect(row.left.map((k) => k.label).take(3), ['✕', '▲▼', '⇧']);
-    expect(row.right.map((k) => k.label).take(2), ['Esc', '⇧']);
+    expect(row.right.map((k) => k.label), ['Esc']);
+    expect(row.right.map((k) => k.label), isNot(contains('⇧')));
   });
 
-  test('row 2 centers the four arrows and drops moved keys', () {
+  test('row 2 puts display, tab, macros, and editing keys left of the keyboard and arrows', () {
     final row = stripLayoutForPlatform(kPeerPlatformMacOS).rows[1];
     final all = [...row.left, ...row.middle, ...row.right].map((k) => k.label);
 
-    expect(row.middle.map((k) => k.label), ['←', '↓', '↑', '→']);
+    expect(row.left.map((k) => k.label), ['🖥', 'Tab', '⚡', '⌫', '⌦', '⎵', '⊞']);
+    expect(row.middle, isEmpty);
+    expect(row.right.map((k) => k.label), ['⌨', '←', '↓', '↑', '→']);
     expect(all.where(['📎', '💬', '⏫', '⏬', '⧉'].contains), isEmpty);
   });
 }
