@@ -1,6 +1,6 @@
+use hbb_common::log;
 use std::os::raw::{c_uint, c_uchar, c_void};
 use std::sync::{Arc, Mutex};
-use std::ptr;
 
 #[link(name = "ScreenCapture", kind = "static")]
 extern "C" {

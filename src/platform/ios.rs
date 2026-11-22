@@ -1,4 +1,4 @@
-use hbb_common::ResultType;
+use hbb_common::{log, ResultType};
 
 pub fn init() {
     // Initialize iOS-specific components

@@ -113,7 +113,7 @@ impl EncoderApi for HwRamEncoder {
                         );
                         // Log GPU signature for hardware-specific issue tracking
                         let gpu_sig = hwcodec::common::get_gpu_signature();
-                        if !gpu_sig.is_empty() {
+                        if gpu_sig != 0 {
                             log::info!("GPU signature: {}", gpu_sig);
                         }
                         Ok(HwRamEncoder {

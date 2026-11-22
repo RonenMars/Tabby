@@ -2,13 +2,12 @@ pub mod ffi;
 
 use std::io;
 use std::time::{Duration, Instant};
-use crate::{would_block_if_equal, TraitCapturer};
+use crate::would_block_if_equal;
 
 pub struct Capturer {
     width: usize,
     height: usize,
     display: Display,
-    frame_data: Vec<u8>,
     last_frame: Vec<u8>,
 }
 
@@ -29,7 +28,6 @@ impl Capturer {
             width: width as usize,
             height: height as usize,
             display,
-            frame_data: Vec::new(),
             last_frame: Vec::new(),
         })
     }
@@ -49,8 +47,9 @@ impl Drop for Capturer {
     }
 }
 
-impl TraitCapturer for Capturer {
-    fn frame<'a>(&'a mut self, timeout: Duration) -> io::Result<crate::Frame<'a>> {
+impl Capturer {
+    // iOS has no `Frame` / `TraitCapturer::frame`. This stays an inherent method.
+    pub fn frame<'a>(&'a mut self, timeout: Duration) -> io::Result<&'a [u8]> {
         let start = Instant::now();
         
         loop {
@@ -59,26 +58,10 @@ impl TraitCapturer for Capturer {
                 self.width = width as usize;
                 self.height = height as usize;
                 
-                // Check if frame is different from last
-                // would_block_if_equal returns Err when frames are EQUAL (should block)
-                match would_block_if_equal(&self.last_frame, &data) {
-                    Ok(_) => {
-                        // Frame is different, use it
-                        self.frame_data = data;
-                        std::mem::swap(&mut self.frame_data, &mut self.last_frame);
-                        
-                        let pixel_buffer = PixelBuffer {
-                            data: &self.last_frame,
-                            width: self.width,
-                            height: self.height,
-                            stride: vec![self.width * 4],
-                        };
-                        
-                        return Ok(crate::Frame::PixelBuffer(pixel_buffer));
-                    }
-                    Err(_) => {
-                        // Frame is same as last, skip
-                    }
+                // would_block_if_equal returns Err when frames are equal and
+                // copies the new bytes into last_frame when they differ.
+                if would_block_if_equal(&mut self.last_frame, &data).is_ok() {
+                    return Ok(&self.last_frame);
                 }
             }
             
@@ -89,35 +72,6 @@ impl TraitCapturer for Capturer {
             // Small sleep to avoid busy waiting
             std::thread::sleep(Duration::from_millis(1));
         }
-    }
-}
-
-pub struct PixelBuffer<'a> {
-    data: &'a [u8],
-    width: usize,
-    height: usize,
-    stride: Vec<usize>,
-}
-
-impl<'a> crate::TraitPixelBuffer for PixelBuffer<'a> {
-    fn data(&self) -> &[u8] {
-        self.data
-    }
-    
-    fn width(&self) -> usize {
-        self.width
-    }
-    
-    fn height(&self) -> usize {
-        self.height
-    }
-    
-    fn stride(&self) -> Vec<usize> {
-        self.stride.clone()
-    }
-    
-    fn pixfmt(&self) -> crate::Pixfmt {
-        crate::Pixfmt::RGBA
     }
 }
 
