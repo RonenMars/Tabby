@@ -109,6 +109,7 @@ class _PowerStripState extends State<PowerStrip> {
           ('C', 'c', {'meta'}),
           ('V', 'v', {'meta'}),
           ('⇥', 'tab', {'meta'}),
+          ('W', 'w', {'meta'}),
           ('X', 'x', {'meta'}),
           ('N', 'n', {'meta'}),
           ('⇧V', 'v', {'meta', 'shift'}),
@@ -151,7 +152,8 @@ class _PowerStripState extends State<PowerStrip> {
     _cmdPopupModifier = modifier;
   }
 
-  // ◀ / ▶ above the ⊞ key: previous or next remote display.
+  // Double-tap on ⊞: ◀ / ▶ for the previous or next remote display.
+  // A single tap steps to the next display directly.
   void _toggleDisplayPopup() {
     if (_cmdPopup != null) {
       _dismissCmdPopup();
@@ -393,8 +395,7 @@ class _PowerStripState extends State<PowerStrip> {
       onDoubleTap: k.type == KeyType.nextDisplay
           ? () {
               HapticFeedback.lightImpact();
-              _dismissCmdPopup();
-              widget.onNextDisplay();
+              _toggleDisplayPopup();
             }
           : null,
       onPressStart: k.type == KeyType.regular
@@ -457,7 +458,8 @@ class _PowerStripState extends State<PowerStrip> {
       case KeyType.clipboardPaste:
         widget.onClipboardPaste();
       case KeyType.nextDisplay:
-        _toggleDisplayPopup();
+        _dismissCmdPopup();
+        widget.onNextDisplay();
       case KeyType.fileSend:
         widget.onFileSend();
       case KeyType.arrowCross:
