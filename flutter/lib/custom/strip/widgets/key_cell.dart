@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,7 +19,8 @@ class KeyCell extends StatelessWidget {
   final KeyDef keyDef;
   final ModifierController modifierController;
   final VoidCallback onTap;
-  // When set, a single tap is delayed ~300ms to tell it apart from a double tap.
+  // When set, the first tap waits kDoubleTapTimeout. A second tap in that
+  // window calls onDoubleTap and does not call onTap.
   final VoidCallback? onDoubleTap;
 
   // Used for KeyType.regular — split press lifecycle so the held modifier
@@ -78,7 +80,7 @@ class KeyCell extends StatelessWidget {
   }
 }
 
-class _KeyButton extends StatelessWidget {
+class _KeyButton extends StatefulWidget {
   final String label;
   final double widthFactor;
   final double? height;
@@ -99,34 +101,59 @@ class _KeyButton extends StatelessWidget {
     this.onLongPressEnd,
   });
 
-  Color get _bg {
-    return switch (mode) {
+  @override
+  State<_KeyButton> createState() => _KeyButtonState();
+}
+
+class _KeyButtonState extends State<_KeyButton> {
+  Timer? _singleTap;
+
+  @override
+  void dispose() {
+    _singleTap?.cancel();
+    super.dispose();
+  }
+
+  // GestureDetector.onDoubleTap still lets the second tap win as onTap.
+  // On ⊞ that second tap dismissed the ◀ / ▶ popup and stepped the display.
+  void _handleTap() {
+    final onDoubleTap = widget.onDoubleTap;
+    if (onDoubleTap == null) {
+      widget.onTap();
+      return;
+    }
+    if (_singleTap != null) {
+      _singleTap!.cancel();
+      _singleTap = null;
+      onDoubleTap();
+      return;
+    }
+    _singleTap = Timer(kDoubleTapTimeout, () {
+      _singleTap = null;
+      widget.onTap();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mode = widget.mode;
+    final bg = switch (mode) {
       ModifierMode.off => AppTokens.colorBgSurface,
       ModifierMode.oneShot =>
         AppTokens.colorPrimary.withValues(alpha: 0.45),
       ModifierMode.sticky || ModifierMode.held => AppTokens.colorPrimary,
     };
-  }
-
-  Color get _fg {
-    return mode == ModifierMode.off
-        ? AppTokens.colorTextHigh
-        : Colors.white;
-  }
-
-  @override
-  Widget build(BuildContext context) {
+    final fg = mode == ModifierMode.off ? AppTokens.colorTextHigh : Colors.white;
     return GestureDetector(
-      onTap: onTap,
-      onDoubleTap: onDoubleTap,
-      onLongPressStart: onLongPressStart,
-      onLongPressEnd: onLongPressEnd,
+      onTap: _handleTap,
+      onLongPressStart: widget.onLongPressStart,
+      onLongPressEnd: widget.onLongPressEnd,
       child: _KeyVisual(
-        label: label,
-        widthFactor: widthFactor,
-        height: height,
-        bg: _bg,
-        fg: _fg,
+        label: widget.label,
+        widthFactor: widget.widthFactor,
+        height: widget.height,
+        bg: bg,
+        fg: fg,
       ),
     );
   }
