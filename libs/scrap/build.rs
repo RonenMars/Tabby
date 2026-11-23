@@ -257,6 +257,7 @@ fn main() {
             .flag("-fobjc-arc")
             .compile("ScreenCapture");
         println!("cargo:rustc-link-lib=framework=Foundation");
+        println!("cargo:rustc-link-lib=framework=CoreGraphics");
         println!("cargo:rustc-link-lib=framework=UIKit");
         println!("cargo:rustc-link-lib=framework=ReplayKit");
         println!("cargo:rerun-if-changed=src/ios/native/ScreenCapture.m");
