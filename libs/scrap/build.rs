@@ -251,7 +251,16 @@ fn main() {
     // ffmpeg();
 
     if target_os == "ios" {
-        // nothing
+        cc::Build::new()
+            .file("src/ios/native/ScreenCapture.m")
+            .include("src/ios/native")
+            .flag("-fobjc-arc")
+            .compile("ScreenCapture");
+        println!("cargo:rustc-link-lib=framework=Foundation");
+        println!("cargo:rustc-link-lib=framework=UIKit");
+        println!("cargo:rustc-link-lib=framework=ReplayKit");
+        println!("cargo:rerun-if-changed=src/ios/native/ScreenCapture.m");
+        println!("cargo:rerun-if-changed=src/ios/native/ScreenCapture.h");
     } else if target_os == "android" {
         println!("cargo:rustc-cfg=android");
     } else if cfg!(windows) {

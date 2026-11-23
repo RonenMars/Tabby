@@ -1,8 +1,7 @@
 use hbb_common::log;
-use std::os::raw::{c_uint, c_uchar, c_void};
+use std::os::raw::{c_uchar, c_uint};
 use std::sync::{Arc, Mutex};
 
-#[link(name = "ScreenCapture", kind = "static")]
 extern "C" {
     fn ios_capture_init();
     fn ios_capture_start() -> bool;
