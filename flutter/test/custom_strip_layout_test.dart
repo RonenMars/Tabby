@@ -1,5 +1,6 @@
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/custom/strip/layouts/default_strip.dart';
+import 'package:flutter_hbb/custom/strip/models/key_def.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -29,7 +30,10 @@ void main() {
 
     expect(left.take(3), ['✕', '▲▼', '⇧']);
     expect(left[left.indexOf('Ctrl') - 1], 'Tab');
-    expect(row.right.map((k) => k.label), ['Esc', '⌨']);
+    expect(row.right.map((k) => k.label), ['Y', 'Esc', '⌨']);
+    expect(row.right.first.type, KeyType.typeString);
+    expect(row.right.first.keyString, 'yes');
+    expect(row.right.first.sendEnter, isTrue);
     expect(row.right.map((k) => k.label), isNot(contains('⇧')));
   });
 
