@@ -1,0 +1,284 @@
+# Sign a Tabby IPA and upload it to TestFlight.
+# Actions → TestFlight → Run workflow.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_TEAM_ID, ASC_AUTH_KEY_B64
+#   IOS_DIST_CERT_P12_B64, IOS_DIST_CERT_PASSWORD
+#   IOS_PROVISION_PROFILE_B64, IOS_PROVISION_PROFILE_UUID
+# The profile must be the App Store profile "Tabby App Store" for
+# dev.ronenmars.tabby. Build numbers must stay above 185.
+
+name: TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "CFBundleVersion override (empty = 185 + run number)"
+        required: false
+        type: string
+        default: ""
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+env:
+  RUST_VERSION: "1.88.0" # rust-toolchain.toml
+  FLUTTER_VERSION: "3.41.8" # docs/tabby/deploy-testflight.md
+  VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
+  PROFILE_NAME: "Tabby App Store"
+  BUNDLE_ID: "dev.ronenmars.tabby"
+
+jobs:
+  generate-bridge:
+    uses: ./.github/workflows/bridge.yml
+
+  ship:
+    name: Build IPA and upload to TestFlight
+    runs-on: macos-26
+    needs: [generate-bridge]
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - name: Install dependencies
+        run: brew install nasm yasm
+
+      - name: Checkout source code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - name: Require signing secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
+          ASC_AUTH_KEY_B64: ${{ secrets.ASC_AUTH_KEY_B64 }}
+          IOS_DIST_CERT_P12_B64: ${{ secrets.IOS_DIST_CERT_P12_B64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISION_PROFILE_B64: ${{ secrets.IOS_PROVISION_PROFILE_B64 }}
+          IOS_PROVISION_PROFILE_UUID: ${{ secrets.IOS_PROVISION_PROFILE_UUID }}
+        run: |
+          missing=0
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_TEAM_ID ASC_AUTH_KEY_B64 IOS_DIST_CERT_P12_B64 IOS_DIST_CERT_PASSWORD IOS_PROVISION_PROFILE_B64 IOS_PROVISION_PROFILE_UUID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::$name secret is not set"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Install flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Cache vcpkg binary packages
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ${{ github.workspace }}/vcpkg_binary_cache
+          key: vcpkg-${{ runner.os }}-arm64-ios-${{ env.VCPKG_COMMIT_ID }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-arm64-ios-${{ env.VCPKG_COMMIT_ID }}-
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
+        with:
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+          doNotCache: true
+
+      - name: Use vcpkg files binary cache
+        shell: bash
+        run: |
+          mkdir -p "${{ github.workspace }}/vcpkg_binary_cache"
+          echo "VCPKG_BINARY_SOURCES=clear;files,${{ github.workspace }}/vcpkg_binary_cache,readwrite" >> "$GITHUB_ENV"
+
+      - name: Install vcpkg dependencies
+        shell: bash
+        run: |
+          if ! "$VCPKG_ROOT/vcpkg" \
+            install \
+            --triplet arm64-ios \
+            --x-install-root="$VCPKG_ROOT/installed"; then
+            find "${VCPKG_ROOT}/" -name "*.log" | while read -r _1; do
+              echo "$_1:"
+              echo "======"
+              cat "$_1"
+              echo "======"
+              echo ""
+            done
+            exit 1
+          fi
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: aarch64-apple-ios
+          components: "rustfmt"
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          prefix-key: rustdesk-lib-cache-ios
+          key: aarch64-apple-ios
+
+      - name: Restore bridge files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Build rustdesk lib
+        env:
+          IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        run: |
+          rustup target add aarch64-apple-ios
+          cargo build --locked --features flutter,hwcodec --release --target aarch64-apple-ios --lib
+
+      - name: Import Apple Distribution certificate
+        env:
+          IOS_DIST_CERT_P12_B64: ${{ secrets.IOS_DIST_CERT_P12_B64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+          CERT_PATH="$RUNNER_TEMP/dist-cert.p12"
+          printf '%s' "$IOS_DIST_CERT_P12_B64" | base64 -d > "$CERT_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$IOS_DIST_CERT_PASSWORD" -A -t cert -f pkcs12
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          rm -f "$CERT_PATH"
+          security find-identity -v -p codesigning | grep -q "Apple Distribution" \
+            || { echo "::error::No Apple Distribution identity in the keychain"; exit 1; }
+
+      - name: Install App Store provisioning profile
+        env:
+          IOS_PROVISION_PROFILE_B64: ${{ secrets.IOS_PROVISION_PROFILE_B64 }}
+          IOS_PROVISION_PROFILE_UUID: ${{ secrets.IOS_PROVISION_PROFILE_UUID }}
+          PROFILE_NAME: ${{ env.PROFILE_NAME }}
+          BUNDLE_ID: ${{ env.BUNDLE_ID }}
+        run: |
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          printf '%s' "$IOS_PROVISION_PROFILE_B64" | base64 -d > "$PROFILE_PATH"
+          security cms -D -i "$PROFILE_PATH" -o "$RUNNER_TEMP/profile.plist"
+          name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")"
+          uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")"
+          app="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")"
+          [[ "$name" == "$PROFILE_NAME" ]] || { echo "::error::Profile name is '$name', expected '$PROFILE_NAME'"; exit 1; }
+          [[ "$uuid" == "$IOS_PROVISION_PROFILE_UUID" ]] || { echo "::error::Profile UUID is '$uuid'"; exit 1; }
+          [[ "$app" == "GUW6BN8X57.$BUNDLE_ID" ]] || { echo "::error::Profile app id is '$app'"; exit 1; }
+          dest="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$dest"
+          cp "$PROFILE_PATH" "$dest/$uuid.mobileprovision"
+          rm -f "$PROFILE_PATH"
+
+      - name: Point the Release build at the App Store profile
+        env:
+          PROFILE_NAME: ${{ env.PROFILE_NAME }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          profile = os.environ["PROFILE_NAME"]
+          project = Path("flutter/ios/Runner.xcodeproj/project.pbxproj")
+          text = project.read_text()
+          text = text.replace(
+              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";',
+              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";',
+          )
+          insert = (
+              "DEVELOPMENT_TEAM = GUW6BN8X57;\n"
+              "\t\t\t\tCODE_SIGN_STYLE = Manual;\n"
+              f'\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{profile}";\n'
+          )
+          if "PROVISIONING_PROFILE_SPECIFIER" not in text:
+              text = text.replace("DEVELOPMENT_TEAM = GUW6BN8X57;\n", insert)
+          project.write_text(text)
+          entitlements = Path("flutter/ios/Runner/Runner.entitlements")
+          ent = entitlements.read_text()
+          entitlements.write_text(ent.replace("<string>development</string>", "<string>production</string>", 1))
+          PY
+
+      - name: Resolve build number
+        id: version
+        env:
+          INPUT: ${{ github.event.inputs.build_number }}
+        run: |
+          # TestFlight already accepted 185. A new workflow's run number starts at 1.
+          floor=185
+          if [[ -n "$INPUT" ]]; then
+            [[ "$INPUT" =~ ^[0-9]+$ ]] || { echo "::error::build_number must be digits"; exit 1; }
+            next="$INPUT"
+          else
+            next=$((floor + ${{ github.run_number }}))
+          fi
+          if (( next <= floor )); then
+            echo "::error::Build number $next must be greater than $floor"
+            exit 1
+          fi
+          echo "build_number=$next" >> "$GITHUB_OUTPUT"
+          echo "Using CFBundleVersion=$next"
+
+      - name: Build signed IPA
+        env:
+          TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
+          PROFILE_NAME: ${{ env.PROFILE_NAME }}
+          BUNDLE_ID: ${{ env.BUNDLE_ID }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+        run: |
+          cat > flutter/ios/exportOptions.ci.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>${TEAM_ID}</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${BUNDLE_ID}</key>
+              <string>${PROFILE_NAME}</string>
+            </dict>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+          cd flutter
+          flutter build ipa --release \
+            --export-options-plist=ios/exportOptions.ci.plist \
+            --build-number "$BUILD_NUMBER"
+
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_AUTH_KEY_B64: ${{ secrets.ASC_AUTH_KEY_B64 }}
+        run: |
+          key_dir="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$key_dir"
+          printf '%s' "$ASC_AUTH_KEY_B64" | base64 -d > "$key_dir/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$key_dir/AuthKey_${ASC_KEY_ID}.p8"
+          xcrun altool --upload-app --type ios \
+            -f flutter/build/ios/ipa/*.ipa \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+          rm -f "$key_dir/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Upload IPA artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Tabby-${{ steps.version.outputs.build_number }}
+          path: flutter/build/ios/ipa/*.ipa
+          if-no-files-found: ignore
+          retention-days: 14
