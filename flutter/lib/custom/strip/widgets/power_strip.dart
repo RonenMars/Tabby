@@ -341,9 +341,9 @@ class _PowerStripState extends State<PowerStrip> {
             padding: EdgeInsets.only(top: row.middle.isEmpty ? 2 : 8, bottom: 2),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                double leftW = row.left.fold(0.0, (s, k) => s + kKeyBaseWidth * k.widthFactor + 4);
-                double middleW = row.middle.fold(0.0, (s, k) => s + kKeyBaseWidth * k.widthFactor + 4);
-                double rightW = row.right.fold(0.0, (s, k) => s + kKeyBaseWidth * k.widthFactor + 4);
+                double leftW = _clusterWidth(row.left);
+                double middleW = _clusterWidth(row.middle);
+                double rightW = _clusterWidth(row.right);
                 double totalW = leftW + middleW + rightW + (row.middle.isEmpty ? 0 : 16);
                 double available = constraints.maxWidth;
                 double scale = totalW > available ? available / totalW : 1.0;
@@ -354,14 +354,14 @@ class _PowerStripState extends State<PowerStrip> {
                   children: [
                     Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: row.left.map((k) => _wrapScaled(k, scale)).toList(),
+                      children: _clusterKeys(row.left, scale),
                     ),
                     const Spacer(),
-                    ...row.middle.map((k) => _wrapScaled(k, scale)),
+                    ..._clusterKeys(row.middle, scale),
                     if (row.middle.isNotEmpty) const Spacer(),
                     Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: row.right.map((k) => _wrapScaled(k, scale)).toList(),
+                      children: _clusterKeys(row.right, scale),
                     ),
                   ],
                 );
@@ -371,6 +371,40 @@ class _PowerStripState extends State<PowerStrip> {
         }).toList(),
       ),
     );
+  }
+
+  // Extra space between Esc and the keyboard toggle, on top of the
+  // usual key padding. The pair stays together when the strip is mirrored.
+  static const _kEscKeyboardGap = 12.0;
+
+  bool _escBesideKeyboard(KeyDef a, KeyDef b) {
+    final escThenKeyboard =
+        a.keyName == 'escape' && b.type == KeyType.keyboardToggle;
+    final keyboardThenEsc =
+        a.type == KeyType.keyboardToggle && b.keyName == 'escape';
+    return escThenKeyboard || keyboardThenEsc;
+  }
+
+  double _clusterWidth(List<KeyDef> keys) {
+    var width = 0.0;
+    for (var i = 0; i < keys.length; i++) {
+      width += kKeyBaseWidth * keys[i].widthFactor + 4;
+      if (i > 0 && _escBesideKeyboard(keys[i - 1], keys[i])) {
+        width += _kEscKeyboardGap;
+      }
+    }
+    return width;
+  }
+
+  List<Widget> _clusterKeys(List<KeyDef> keys, double scale) {
+    final children = <Widget>[];
+    for (var i = 0; i < keys.length; i++) {
+      if (i > 0 && _escBesideKeyboard(keys[i - 1], keys[i])) {
+        children.add(SizedBox(width: _kEscKeyboardGap * scale));
+      }
+      children.add(_wrapScaled(keys[i], scale));
+    }
+    return children;
   }
 
   Widget _wrapScaled(KeyDef k, double scale) {
@@ -466,10 +500,7 @@ class _PowerStripState extends State<PowerStrip> {
         // arrowCross removed — individual arrow keys added directly to strip
         break;
       case KeyType.typeString:
-        if (k.keyString != null) {
-          widget.inputBridge.typeString(k.keyString!);
-          if (k.sendEnter) widget.inputBridge.tapKey('return');
-        }
+        unawaited(_sendTypeString(k));
       case KeyType.sessionSwitch:
         widget.onSessionsTap?.call();
       case KeyType.regular:
@@ -480,6 +511,15 @@ class _PowerStripState extends State<PowerStrip> {
         // Fn layer not implemented in v1 — use macros instead
         break;
     }
+  }
+
+  // Enter has to follow the typed text, so the string future is awaited
+  // before the return key goes out.
+  Future<void> _sendTypeString(KeyDef k) async {
+    final text = k.keyString;
+    if (text == null) return;
+    await widget.inputBridge.typeString(text);
+    if (k.sendEnter) await widget.inputBridge.tapKey('return');
   }
 
   // Haptic fires once on touch-down inside _RepeatingKeyButton (not here),
