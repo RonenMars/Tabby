@@ -1,5 +1,5 @@
 # Manual build of the iOS Rust static library only.
-# Mirrors the `build-rustdesk-ios` job in flutter-build.yml, minus the other platforms and any release upload.
+# Full Flutter CI no longer builds an unsigned iOS IPA. Signed IPAs are the TestFlight workflow.
 name: Build iOS Rust lib
 
 on:
